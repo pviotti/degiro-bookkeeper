@@ -1,22 +1,22 @@
 #r "nuget: FSharp.Data"
 
 open System
-open System.Threading
-open System.Globalization
 
 // change printed format of specific types in fsi
 fsi.AddPrinter<DateTime>(fun d -> d.ToShortDateString())
 fsi.AddPrinter<TimeSpan>(fun time -> time.ToString("c"))
 
-//type Transaction = {
-//    Date: DateTime
-//    Product: string
-//    Fees: float
-//    Price: float
-//    OrderId: string
-//}
-
-Thread.CurrentThread.CurrentCulture = CultureInfo("en-IRL")
+type TxnType = Sell | Buy
+type ProductType = Shares | Etf
+type Txn = {
+    Date: DateTime
+    Type: TxnType
+    Product: string
+    ProdType: ProductType
+    Fees: float
+    Price: float
+    OrderId: string
+}
 
 let [<Literal>] CsvFilePath = __SOURCE_DIRECTORY__ + "/account.csv"
 
@@ -49,16 +49,30 @@ let buildTxn (txn: string * seq<Account.Row>) =
                                            | true -> records |> Seq.find (fun x -> x.Description.Equals "FX Credit")
                                            | false -> records |> Seq.find (fun x -> x.Description.Equals "FX Debit")
                                fxRow.Price
-        printfn "%s %s\t%s\t%f\t%f" (dateToString descRow.Date) descRow.Product (isSellToString isSell) price degiroFees
+        {
+            Date=(Option.defaultValue (DateTime.Now) descRow.Date);
+            Type=(if isSell then Sell else Buy); 
+            Product=descRow.Product;
+            ProdType=Shares; // FIXME: tell apart ETF from Shares
+            Fees=degiroFees;
+            Price=price;
+            OrderId=(fst txn);
+        }
+        //printfn "%s %s\t%s\t%f\t%f" (dateToString descRow.Date) descRow.Product (isSellToString isSell) price degiroFees
     with ex ->
-        printfn "Error: %A" (Seq.head records)
+        failwithf "Error: %A" (Seq.head records)
 
 
 let txns : seq<string * seq<Account.Row>> = account.Rows
-                                            |> Seq.filter (fun x -> not (String.IsNullOrEmpty x.OrderId))
-                                            |> Seq.groupBy (fun x -> x.OrderId.[0 .. 18])
+                                            |> Seq.filter (fun row -> Option.isSome row.OrderId)
+                                            |> Seq.groupBy (fun row ->
+                                                match row.OrderId with
+                                                | Some(x) -> x.ToString().[0 .. 18]
+                                                | None -> "")
+                                                
 txns
-txns |> Seq.iter buildTxn
+let txnsObjs = txns |> Seq.map buildTxn
+txnsObjs
 
 let depositTot = account.Rows
                  |> Seq.filter (fun x -> x.Description.Equals "Deposit")
