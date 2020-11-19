@@ -16,10 +16,12 @@ type Txn = {
     Date: DateTime
     Type: TxnType
     Product: string
+    ProductId: string
     ProdType: ProductType
     Quantity: int
     Fees: float
     Price: float
+    Value: float
     OrderId: string
 }
 
@@ -45,10 +47,13 @@ let buildTxn (txn: string * seq<Account.Row>) =
     let records = snd txn
     try
         let descRow: Account.Row = records |> Seq.find (fun x -> (x.Description.StartsWith "Sell" || x.Description.StartsWith "Buy"))
-        let matches = Regex.Match(descRow.Description, "(Buy|Sell) (\d+)")
+        let matches = Regex.Match(descRow.Description, "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD) \((.+)\)")
         let isSell = matches.Groups.[1].Value.Equals "Sell"
         let quantity = int matches.Groups.[2].Value
-        let price = match descRow.Description.Contains "EUR" with
+        let value = float matches.Groups.[3].Value
+        let isEuro = matches.Groups.[4].Value.Equals "EUR"
+        let productId = matches.Groups.[5].Value
+        let price = match isEuro with
                     | true -> descRow.Price
                     | false -> let fxRow = match isSell with
                                            | true -> records |> Seq.find (fun x -> x.Description.Equals "FX Credit")
@@ -60,14 +65,16 @@ let buildTxn (txn: string * seq<Account.Row>) =
         { Date=(Option.defaultValue (DateTime.Now) descRow.Date);
         Type=(if isSell then Sell else Buy); 
         Product=descRow.Product;
+        ProductId=productId;
         ProdType=Shares; // FIXME: tell apart ETF from Shares
         Quantity=quantity;
         Fees=degiroFees;
         Price=price;
+        Value=value;
         OrderId=(fst txn); }
         //printfn "%s %s\t%s\t%f\t%f" (dateToString descRow.Date) descRow.Product (isSellToString isSell) price degiroFees
     with ex ->
-        failwithf "Error: %A" (Seq.head records)
+        failwithf "Error: %A - %s \n%A" (Seq.head records) ex.Message ex
 
 
 // Get all rows corresponding to some order, grouped by their OrderId
@@ -78,8 +85,7 @@ let txns : seq<string * seq<Account.Row>> = account.Rows |> Seq.filter (fun row 
                                                 | None -> "")
 
 txns
-let txnsObjs = txns |> Seq.map buildTxn
-txnsObjs
+txns |> Seq.map buildTxn
 
 
 // Get deposits amount
