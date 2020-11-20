@@ -11,6 +11,7 @@ fsi.AddPrinter<TimeSpan>(fun time -> time.ToString("c"))
 
 // Entities
 type TxnType = Sell | Buy
+type Currency = USD | EUR
 type ProductType = Shares | Etf
 type Txn = {
     Date: DateTime
@@ -22,7 +23,8 @@ type Txn = {
     Fees: float
     Price: float
     Value: float
-    OrderId: string
+    ValueCurrency: Currency
+    OrderId: Guid
 }
 
 let [<Literal>] CsvFilePath = __SOURCE_DIRECTORY__ + "/account.csv"
@@ -46,23 +48,23 @@ let isSellToString isSell = if isSell then "SELL" else "BUY"
 let buildTxn (txn: string * seq<Account.Row>) =
     let records = snd txn
     try
-        let descRow: Account.Row = records |> Seq.find (fun x -> (x.Description.StartsWith "Sell" || x.Description.StartsWith "Buy"))
+        let descRow = Seq.last records // Row with txn description is always the last
         let matches = Regex.Match(descRow.Description, "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD) \((.+)\)")
         let isSell = matches.Groups.[1].Value.Equals "Sell"
         let quantity = int matches.Groups.[2].Value
         let value = float matches.Groups.[3].Value
-        let isEuro = matches.Groups.[4].Value.Equals "EUR"
+        let valueCurrency = if matches.Groups.[4].Value.Equals (nameof EUR) then EUR else USD
         let productId = matches.Groups.[5].Value
-        let price = match isEuro with
-                    | true -> descRow.Price
-                    | false -> let fxRow = match isSell with
+        let price = match valueCurrency with
+                    | EUR -> descRow.Price
+                    | USD -> let fxRow = match isSell with
                                            | true -> records |> Seq.find (fun x -> x.Description.Equals "FX Credit")
                                            | false -> records |> Seq.find (fun x -> x.Description.Equals "FX Debit")
-                               fxRow.Price
+                             fxRow.Price
         let degiroFees = records
                          |> Seq.filter (fun x -> x.Description.Equals "DEGIRO Transaction Fee")
                          |> Seq.sumBy (fun x -> x.Price)
-        { Date=(Option.defaultValue (DateTime.Now) descRow.Date);
+        { Date=(Option.defaultValue (DateTime.MinValue) descRow.Date);
         Type=(if isSell then Sell else Buy); 
         Product=descRow.Product;
         ProductId=productId;
@@ -71,8 +73,8 @@ let buildTxn (txn: string * seq<Account.Row>) =
         Fees=degiroFees;
         Price=price;
         Value=value;
-        OrderId=(fst txn); }
-        //printfn "%s %s\t%s\t%f\t%f" (dateToString descRow.Date) descRow.Product (isSellToString isSell) price degiroFees
+        ValueCurrency=valueCurrency;
+        OrderId=(Option.defaultValue (Guid.Empty) descRow.OrderId); }
     with ex ->
         failwithf "Error: %A - %s \n%A" (Seq.head records) ex.Message ex
 
