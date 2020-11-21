@@ -37,6 +37,12 @@ type Txn =
       ValueCurrency: Currency
       OrderId: Guid }
 
+type Earning =
+    { Date: DateTime
+      Product: string
+      Value: float
+      Percent: float }
+
 [<Literal>]
 let CsvFilePath = __SOURCE_DIRECTORY__ + "/account.csv"
 
@@ -121,12 +127,6 @@ txnsRows
 let txns = txnsRows |> Seq.map buildTxn
 txns
 
-// Get deposits amount
-let depositTot =
-    account.Rows
-    |> Seq.filter (fun x -> x.Description.Equals "Deposit")
-    |> Seq.sumBy (fun x -> x.Price)
-
 // Get all Sell transactions for the given year
 let yearSells =
     txns
@@ -136,7 +136,7 @@ let yearSells =
 // For each Sell transaction, compute its earning by
 //    going back in time to as many Buy transactions as required to match the quantity sold
 //    FIXME: make it comply with Irish CGT FIFO rule
-let computeEarning txns sellTxn =
+let computeEarning (txns: seq<Txn>) (sellTxn: Txn) =
     let buysPrecedingSell =
         txns
         |> Seq.sortByDescending (fun x -> x.Date)
@@ -158,20 +158,55 @@ let computeEarning txns sellTxn =
                     0,
                     (totBuyPrice
                      + (currBuy.Price / float (currBuy.Quantity))
-                     * float (quantityToSell))
+                       * float (quantityToSell))
 
             getTotBuyPrice (Seq.tail buys) quantityRemaining newTotalBuyPrice
 
-    let totBuyPrice = getTotBuyPrice buysPrecedingSell sellTxn.Quantity 0.0
-    sellTxn.Price + totBuyPrice
-    
-let yearEarnings = yearSells |> Seq.map (fun sell ->
-                                     let earning = computeEarning txns sell
-                                     sell.Product, earning)
-Seq.iter (fun x -> printfn "%A" x) yearEarnings
+    let totBuyPrice =
+        getTotBuyPrice buysPrecedingSell sellTxn.Quantity 0.0
 
-// Compute total gain in a given year
-let yearTotalEarning = Seq.sumBy snd yearEarnings
+    let earning = sellTxn.Price + totBuyPrice
+    earning, earning / (-totBuyPrice) * 100.0
+
+let yearEarnings: seq<Earning> =
+    yearSells
+    |> Seq.map (fun sell ->
+        let earning, earningPercentage = computeEarning txns sell
+
+        { Date = sell.Date
+          Product = sell.Product
+          Value = earning
+          Percent = earningPercentage })
+
+let printEarning (e: Earning) =
+    printfn "%s %-40s %7.2f %7.1f%%" (e.Date.ToString("yyyy-MM-dd")) e.Product e.Value e.Percent
+
+printfn "%-10s %-40s %7s %8s" "Date" "Product" "P/L (€)" "%"
+Seq.toList yearEarnings |> List.map printEarning
+
+// Compute gain stats for the given year
+let yearTotalEarning =
+    yearEarnings |> Seq.sumBy (fun x -> x.Value)
+
+let yearAvgPercentEarning =
+    yearEarnings |> Seq.averageBy (fun x -> x.Percent)
 
 // Compute CGT to pay
 let yearCgt = 0.33 * yearTotalEarning
+
+// Compute total DeGiro Fees (txn fees and stock exchange fees)
+let totFees =
+    account.Rows
+    |> Seq.filter (fun x ->
+        (Option.defaultValue DateTime.MinValue x.Date).Year = 2020
+         && (x.Description.Equals "DEGIRO Transaction Fee"
+        || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
+    |> Seq.sumBy (fun x -> x.Price)
+//Seq.toList totFees |> List.iter (printfn "%A")
+
+// Get deposits amount
+let depositTot =
+    account.Rows
+    |> Seq.filter (fun x -> x.Description.Equals "Deposit")
+    |> Seq.sumBy (fun x -> x.Price)
+    
