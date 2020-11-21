@@ -6,18 +6,35 @@
 
 open FSharp.Data
 open System
+open System.IO
 open System.Text.RegularExpressions
 
-// Change printed format of specific types in fsi
+// Change printed format of specific types in fsi REPL
 //fsi.AddPrinter<DateTime>(fun d -> d.ToShortDateString())
 //fsi.AddPrinter<TimeSpan>(fun time -> time.ToString("c"))
 
 // Cmd line argument parsing
 let argv = Environment.GetCommandLineArgs()
+
 if argv.Length < 4 then
     eprintfn "Error: missing parameter"
     eprintfn "Usage: dotnet fsi %s <path/to/statement.csv> <year>" argv.[1]
     Environment.Exit 1
+
+//let [<Literal>] csvFile = __SOURCE_DIRECTORY__ + "/account.csv"
+let csvFile =
+    __SOURCE_DIRECTORY__
+    + string (Path.DirectorySeparatorChar)
+    + argv.[2]
+
+let year = argv.[3]
+
+[<Literal>]
+let accountStatementSampleCsv = """
+Date,Time,Value date,Product,ISIN,Description,FX,Change,,Balance,,Order ID
+28-10-2020,14:30,28-10-2020,ASSET DESCR,US4780000,FX Credit,1.1719,USD,563.60,USD,0.00,3aca1fc3-d622-46de-8c8b-1bec568feac5
+28-10-2020,06:42,27-10-2020,DESC,US4780000,Dividend,,USD,2.50,USD,2.12,
+"""
 
 // Entities
 type TxnType =
@@ -51,12 +68,9 @@ type Earning =
       Value: float
       Percent: float }
 
-[<Literal>]
-let CsvFilePath = __SOURCE_DIRECTORY__ + "/account.csv"
-
-// Culture is used to automatically parse dates in the dd-mm-YYY format as `Option<DateTime>` type
-type Account = CsvProvider<CsvFilePath, Schema=",,,,,,,,Price,,,OrderId", Culture="en-IRL">
-let account: Account = Account.Load(CsvFilePath)
+// Culture is set to parse dates in the dd-mm-YYY format as `Option<DateTime>` type
+type Account = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (float),,,OrderId", Culture="en-IRL">
+let account: Account = Account.Load(csvFile)
 
 //let firstRow : Account.Row = account.Rows |> Seq.head
 //firstRow.Date
@@ -108,7 +122,7 @@ let buildTxn (txn: string * seq<Account.Row>) =
             |> Seq.filter (fun x -> x.Description.Equals "DEGIRO Transaction Fee")
             |> Seq.sumBy (fun x -> x.Price)
 
-        { Date = (Option.defaultValue (DateTime.MinValue) descRow.Date)
+        { Date = descRow.Date
           Type = (if isSell then Sell else Buy)
           Product = descRow.Product
           ProductId = productId
@@ -206,9 +220,9 @@ let yearCgt = 0.33 * yearTotalEarning
 let totFees =
     account.Rows
     |> Seq.filter (fun x ->
-        (Option.defaultValue DateTime.MinValue x.Date).Year = 2020
-         && (x.Description.Equals "DEGIRO Transaction Fee"
-        || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
+        x.Date.Year = 2020
+        && (x.Description.Equals "DEGIRO Transaction Fee"
+            || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
     |> Seq.sumBy (fun x -> x.Price)
 //Seq.toList totFees |> List.iter (printfn "%A")
 
@@ -217,4 +231,3 @@ let depositTot =
     account.Rows
     |> Seq.filter (fun x -> x.Description.Equals "Deposit")
     |> Seq.sumBy (fun x -> x.Price)
-    
