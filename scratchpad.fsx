@@ -226,3 +226,13 @@ let depositTot =
     account.Rows
     |> Seq.filter (fun x -> x.Description.Equals "Deposit")
     |> Seq.sumBy (fun x -> x.Price)
+
+let yearDepositTot =
+    account.Rows
+    |> Seq.filter (fun x ->
+        x.Description.Equals "Deposit"
+        && x.Date.Year = year)
+    |> Seq.sumBy (fun x -> x.Price)
+
+printfn "\nTot. deposits (€): %.2f" depositTot
+printfn "Tot. deposits in %d (€): %.2f" year yearDepositTot
