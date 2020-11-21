@@ -27,7 +27,7 @@ let csvFile =
     + string (Path.DirectorySeparatorChar)
     + argv.[2]
 
-let year = argv.[3]
+let year = int argv.[3]
 
 [<Literal>]
 let accountStatementSampleCsv = """
@@ -153,7 +153,11 @@ txns
 let yearSells =
     txns
     |> Seq.sortByDescending (fun x -> x.Date)
-    |> Seq.filter (fun x -> x.Date.Year = 2020 && x.Type = Sell)
+    |> Seq.filter (fun x -> x.Date.Year = year && x.Type = Sell)
+
+if Seq.isEmpty yearSells then
+    printfn "No sells recorded in %d." year
+    Environment.Exit 0
 
 // For each Sell transaction, compute its earning by
 //    going back in time to as many Buy transactions as required to match the quantity sold
@@ -220,7 +224,7 @@ let yearCgt = 0.33 * yearTotalEarning
 let totFees =
     account.Rows
     |> Seq.filter (fun x ->
-        x.Date.Year = 2020
+        x.Date.Year = year
         && (x.Description.Equals "DEGIRO Transaction Fee"
             || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
     |> Seq.sumBy (fun x -> x.Price)
