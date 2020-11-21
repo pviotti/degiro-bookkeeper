@@ -36,7 +36,7 @@ Date,Time,Value date,Product,ISIN,Description,FX,Change,,Balance,,Order ID
 28-10-2020,06:42,27-10-2020,DESC,US4780000,Dividend,,USD,2.50,USD,2.12,
 """
 
-// Entities
+// Types
 type TxnType =
     | Sell
     | Buy
@@ -72,7 +72,7 @@ type Earning =
 type Account = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (float),,,OrderId", Culture="en-IRL">
 let account: Account = Account.Load(csvFile)
 
-// Build transactions (i.e. rows corresponding to DeGiro orders)
+// Build transactions (Txn) (i.e. rows corresponding to DeGiro orders)
 let buildTxn (txn: string * seq<Account.Row>) =
     let records = snd txn
 
@@ -136,9 +136,7 @@ let txnsRows: seq<string * seq<Account.Row>> =
         | Some (x) -> x.ToString().[0..18] // XXX because some Guids are garbled in input csv
         | None -> "")
 
-txnsRows
-let txns = txnsRows |> Seq.map buildTxn
-txns
+let txns = Seq.map buildTxn txnsRows
 
 // Get all Sell transactions for the given year
 let yearSells =
@@ -198,30 +196,34 @@ let yearEarnings: seq<Earning> =
 let printEarning (e: Earning) =
     printfn "%s %-40s %7.2f %7.1f%%" (e.Date.ToString("yyyy-MM-dd")) e.Product e.Value e.Percent
 
-printfn "%-10s %-40s %7s %8s" "Date" "Product" "P/L (€)" "%"
+printfn "%-10s %-40s %7s %8s\n%s" "Date" "Product" "P/L (€)" "P/L %" (String.replicate 68 "-")
 Seq.toList yearEarnings |> List.map printEarning
 
-// Compute gain stats for the given year
+// Compute earning stats for the given year
 let yearTotalEarning =
     yearEarnings |> Seq.sumBy (fun x -> x.Value)
 
 let yearAvgPercentEarning =
     yearEarnings |> Seq.averageBy (fun x -> x.Percent)
 
+printfn "\nTot. P/L (€): %.2f" yearTotalEarning
+printfn "Avg %% P/L: %.2f%%" yearAvgPercentEarning
+
 // Compute CGT to pay
-let yearCgt = 0.33 * yearTotalEarning
+// let yearCgt = 0.33 * yearTotalEarning
 
 // Compute total DeGiro Fees (txn fees and stock exchange fees)
-let totFees =
+let yearTotFees =
     account.Rows
     |> Seq.filter (fun x ->
         x.Date.Year = year
         && (x.Description.Equals "DEGIRO Transaction Fee"
             || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
     |> Seq.sumBy (fun x -> x.Price)
-//Seq.toList totFees |> List.iter (printfn "%A")
 
-// Get deposits amount
+printfn "\nTot. DeGiro fees (€): %.2f" yearTotFees
+
+// Get deposits amounts
 let depositTot =
     account.Rows
     |> Seq.filter (fun x -> x.Description.Equals "Deposit")
