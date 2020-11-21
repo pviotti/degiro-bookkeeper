@@ -72,16 +72,7 @@ type Earning =
 type Account = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (float),,,OrderId", Culture="en-IRL">
 let account: Account = Account.Load(csvFile)
 
-//let firstRow : Account.Row = account.Rows |> Seq.head
-//firstRow.Date
-
-// Utility functions
-let dateToString (date: Option<DateTime>) =
-    match date with
-    | Some (x) -> x.ToString "yyyy-MM-dd"
-    | None -> "None"
-
-// Build transactions
+// Build transactions (i.e. rows corresponding to DeGiro orders)
 let buildTxn (txn: string * seq<Account.Row>) =
     let records = snd txn
 
