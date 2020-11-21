@@ -1,3 +1,5 @@
+open System.Transactions
+
 #r "nuget: FSharp.Data"
 
 open FSharp.Data
@@ -14,13 +16,13 @@ type TxnType =
     | Sell
     | Buy
 
-type Currency =
-    | USD
-    | EUR
-
 type ProductType =
     | Shares
     | Etf
+
+type Currency =
+    | USD
+    | EUR
 
 type Txn =
     { Date: DateTime
@@ -50,8 +52,6 @@ let dateToString (date: Option<DateTime>) =
     match date with
     | Some (x) -> x.ToString "yyyy-MM-dd"
     | None -> "None"
-
-let isSellToString isSell = if isSell then "SELL" else "BUY"
 
 // Build transactions
 let buildTxn (txn: string * seq<Account.Row>) =
@@ -105,21 +105,21 @@ let buildTxn (txn: string * seq<Account.Row>) =
           Value = value
           ValueCurrency = valueCurrency
           OrderId = (Option.defaultValue (Guid.Empty) descRow.OrderId) }
-    with ex -> failwithf "Error: %A - %s \n%A" (Seq.head records) ex.Message ex
+    with ex -> failwithf "Error: %A - %s \n%A" (Seq.last records) ex.Message ex
 
 
 // Get all rows corresponding to some order, grouped by their OrderId
-let txns: seq<string * seq<Account.Row>> =
+let txnsRows: seq<string * seq<Account.Row>> =
     account.Rows
     |> Seq.filter (fun row -> Option.isSome row.OrderId)
     |> Seq.groupBy (fun row ->
         match row.OrderId with
-        | Some (x) -> x.ToString().[0..18]
+        | Some (x) -> x.ToString().[0..18] // XXX because some Guids are garbled in input csv
         | None -> "")
 
+txnsRows
+let txns = txnsRows |> Seq.map buildTxn
 txns
-txns |> Seq.map buildTxn
-
 
 // Get deposits amount
 let depositTot =
@@ -127,8 +127,51 @@ let depositTot =
     |> Seq.filter (fun x -> x.Description.Equals "Deposit")
     |> Seq.sumBy (fun x -> x.Price)
 
-//let filtered = account.Rows
-//                |> Seq.filter (fun x -> not (System.String.IsNullOrEmpty x.Product))
-//                |> Seq.map (fun x -> (x.Date, x.Product, x.Description))
-//                |> Seq.groupBy (fun (date: Option<DateTime>, product: string, desc: string) -> product)
-//    |> Seq.filter (fun x -> !x.Product.Contains("Flatex") )
+// Get all Sell transactions for the given year
+let yearSells =
+    txns
+    |> Seq.sortByDescending (fun x -> x.Date)
+    |> Seq.filter (fun x -> x.Date.Year = 2020 && x.Type = Sell)
+
+// For each Sell transaction, compute its earning by
+//    going back in time to as many Buy transactions as required to match the quantity sold
+//    FIXME: make it comply with Irish CGT FIFO rule
+let computeEarning txns sellTxn =
+    let buysPrecedingSell =
+        txns
+        |> Seq.sortByDescending (fun x -> x.Date)
+        |> Seq.filter (fun x ->
+            x.Type = Buy
+            && x.Product = sellTxn.Product
+            && x.Date < sellTxn.Date)
+
+    let rec getTotBuyPrice (buys: seq<Txn>) (quantityToSell: int) (totBuyPrice: float) =
+        if Seq.isEmpty buys || quantityToSell = 0 then
+            totBuyPrice
+        else
+            let currBuy = Seq.head buys
+
+            let quantityRemaining, newTotalBuyPrice =
+                if currBuy.Quantity <= quantityToSell then
+                    quantityToSell - currBuy.Quantity, totBuyPrice + currBuy.Price
+                else
+                    0,
+                    (totBuyPrice
+                     + (currBuy.Price / float (currBuy.Quantity))
+                     * float (quantityToSell))
+
+            getTotBuyPrice (Seq.tail buys) quantityRemaining newTotalBuyPrice
+
+    let totBuyPrice = getTotBuyPrice buysPrecedingSell sellTxn.Quantity 0.0
+    sellTxn.Price + totBuyPrice
+    
+let yearEarnings = yearSells |> Seq.map (fun sell ->
+                                     let earning = computeEarning txns sell
+                                     sell.Product, earning)
+Seq.iter (fun x -> printfn "%A" x) yearEarnings
+
+// Compute total gain in a given year
+let yearTotalEarning = Seq.sumBy snd yearEarnings
+
+// Compute CGT to pay
+let yearCgt = 0.33 * yearTotalEarning
