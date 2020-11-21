@@ -1,4 +1,4 @@
-// Simple script to extract some statistics from DeGiro statements
+// Simple script to extract some statistics from DeGiro account statements.
 // Requires: F# 5 (.NET 5)
 // Usage: dotnet fsi degiro.fsx <path/to/statement.csv> <year>
 
@@ -226,13 +226,16 @@ printfn "\nTot. DeGiro fees (€): %.2f" yearTotFees
 // Get deposits amounts
 let depositTot =
     account.Rows
-    |> Seq.filter (fun x -> x.Description.Equals "Deposit")
+    |> Seq.filter (fun x ->
+        x.Description.Equals "Deposit"
+        || x.Description.Equals "flatex Deposit")
     |> Seq.sumBy (fun x -> x.Price)
 
 let yearDepositTot =
     account.Rows
     |> Seq.filter (fun x ->
-        x.Description.Equals "Deposit"
+        (x.Description.Equals "Deposit"
+         || x.Description.Equals "flatex Deposit")
         && x.Date.Year = year)
     |> Seq.sumBy (fun x -> x.Price)
 
