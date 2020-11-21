@@ -1,4 +1,6 @@
-open System.Transactions
+// Simple script to extract some statistics from DeGiro statements
+// Requires: F# 5 (.NET 5)
+// Usage: dotnet fsi degiro.fsx <path/to/statement.csv> <year>
 
 #r "nuget: FSharp.Data"
 
@@ -6,10 +8,16 @@ open FSharp.Data
 open System
 open System.Text.RegularExpressions
 
+// Change printed format of specific types in fsi
+//fsi.AddPrinter<DateTime>(fun d -> d.ToShortDateString())
+//fsi.AddPrinter<TimeSpan>(fun time -> time.ToString("c"))
 
-// change printed format of specific types in fsi
-fsi.AddPrinter<DateTime>(fun d -> d.ToShortDateString())
-fsi.AddPrinter<TimeSpan>(fun time -> time.ToString("c"))
+// Cmd line argument parsing
+let argv = Environment.GetCommandLineArgs()
+if argv.Length < 4 then
+    eprintfn "Error: missing parameter"
+    eprintfn "Usage: dotnet fsi %s <path/to/statement.csv> <year>" argv.[1]
+    Environment.Exit 1
 
 // Entities
 type TxnType =
