@@ -1,0 +1,44 @@
+# CSV input files
+*.csv
+
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+
+.idea
+
+# Visual Studio Code
+.vscode
+.ionide
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts
+
+# Visual Studio 2015
+.vs/
+
+
+.fake
