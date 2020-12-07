@@ -1,6 +1,8 @@
 // Simple script to extract some statistics from DeGiro account statements.
 // Requires: F# 5 (.NET 5)
-// Usage: dotnet fsi degiro.fsx <path/to/statement.csv> <year>
+// Usage: dotnet fsi degiro.fsx <path/to/statement.csv> <year> [<1,2>]
+// The last argument refers to the first or second yearly period of Irish CGT.
+// If omitted, the script will consider the entire year.
 
 #r "nuget: FSharp.Data"
 
@@ -18,7 +20,7 @@ let argv = Environment.GetCommandLineArgs()
 
 if argv.Length < 4 then
     eprintfn "Error: missing parameter"
-    eprintfn "Usage: dotnet fsi %s <path/to/statement.csv> <year>" argv.[1]
+    eprintfn "Usage: dotnet fsi %s <path/to/statement.csv> <year> [<1,2>]" argv.[1]
     Environment.Exit 1
 
 //let [<Literal>] csvFile = __SOURCE_DIRECTORY__ + "/account.csv"
@@ -27,7 +29,14 @@ let csvFile =
     + string (Path.DirectorySeparatorChar)
     + argv.[2]
 
+type Period =
+    | Initial=1
+    | Later=2
+    | All=3
+
 let year = int argv.[3]
+let period = if argv.Length <= 4 then Period.All
+                else enum<Period>(int argv.[4])
 
 [<Literal>]
 let accountStatementSampleCsv = """
@@ -138,14 +147,18 @@ let txnsRows: seq<string * seq<Account.Row>> =
 
 let txns = Seq.map buildTxn txnsRows
 
-// Get all Sell transactions for the given year
-let yearSells =
+// Get all Sell transactions for the given period
+let periodSells =
     txns
     |> Seq.sortByDescending (fun x -> x.Date)
-    |> Seq.filter (fun x -> x.Date.Year = year && x.Type = Sell)
+    |> Seq.filter (fun x ->
+            match period with
+            | Period.Initial -> x.Date.Month < 12 && x.Date.Year = year && x.Type = Sell
+            | Period.Later -> x.Date.Month = 12 && x.Date.Year = year && x.Type = Sell
+            | _ -> x.Date.Year = year && x.Type = Sell)
 
-if Seq.isEmpty yearSells then
-    printfn "No sells recorded in %d." year
+if Seq.isEmpty periodSells then
+    printfn "No sells recorded in %d, period %A." year period
     Environment.Exit 0
 
 // For each Sell transaction, compute its earning by
@@ -183,8 +196,8 @@ let computeEarning (txns: seq<Txn>) (sellTxn: Txn) =
     let earning = sellTxn.Price + totBuyPrice
     earning, earning / (-totBuyPrice) * 100.0
 
-let yearEarnings: seq<Earning> =
-    yearSells
+let periodEarnings: seq<Earning> =
+    periodSells
     |> Seq.map (fun sell ->
         let earning, earningPercentage = computeEarning txns sell
 
@@ -197,17 +210,17 @@ let printEarning (e: Earning) =
     printfn "%s %-40s %7.2f %7.1f%%" (e.Date.ToString("yyyy-MM-dd")) e.Product e.Value e.Percent
 
 printfn "%-10s %-40s %7s %8s\n%s" "Date" "Product" "P/L (€)" "P/L %" (String.replicate 68 "-")
-Seq.toList yearEarnings |> List.map printEarning
+Seq.toList periodEarnings |> List.map printEarning
 
-// Compute earning stats for the given year
-let yearTotalEarning =
-    yearEarnings |> Seq.sumBy (fun x -> x.Value)
+// Compute earning stats for the given period
+let periodTotalEarnings =
+    periodEarnings |> Seq.sumBy (fun x -> x.Value)
 
-let yearAvgPercentEarning =
-    yearEarnings |> Seq.averageBy (fun x -> x.Percent)
+let periodAvgPercentEarning =
+    periodEarnings |> Seq.averageBy (fun x -> x.Percent)
 
-printfn "\nTot. P/L (€): %.2f" yearTotalEarning
-printfn "Avg %% P/L: %.2f%%" yearAvgPercentEarning
+printfn "\nTot. P/L (€): %.2f" periodTotalEarnings
+printfn "Avg %% P/L: %.2f%%" periodAvgPercentEarning
 
 // Compute CGT to pay
 // let yearCgt = 0.33 * yearTotalEarning
@@ -221,7 +234,7 @@ let yearTotFees =
             || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
     |> Seq.sumBy (fun x -> x.Price)
 
-printfn "\nTot. DeGiro fees (€): %.2f" yearTotFees
+printfn "\nTot. DeGiro fees in %d (€): %.2f" year yearTotFees
 
 // Get deposits amounts
 let depositTot =
