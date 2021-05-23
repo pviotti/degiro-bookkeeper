@@ -167,6 +167,26 @@ module DegiroAccount =
             && x.Date.Year = year)
         |> Seq.sumBy (fun x -> x.Price)
 
+    let cleanCsv (csvContent: string) =
+        let rows = csvContent.Split '\n'
+        let malformed = Array.Exists (rows, (fun row -> (row.[0 .. 2].Equals ",,,")))
+        if malformed then
+            let sb = StringBuilder()
+            rows
+            |> Seq.iter (fun row ->
+                            let strToAppend = 
+                                if not (row.[0 .. 2].Equals ",,,") then 
+                                    row
+                                else 
+                                    sb.Remove (sb.Length-1, 1) |> ignore
+                                    Array.last (row.Split(","))
+                            sb.Append strToAppend |> ignore
+                            sb.AppendLine() |> ignore)
+            sb.ToString(), malformed
+        else
+            csvContent, malformed
+
+
 
 open DegiroAccount
 
@@ -180,7 +200,12 @@ let main argv =
 
     //let [<Literal>] csvFile = __SOURCE_DIRECTORY__ + "/account.csv"
     // let csvFile = __SOURCE_DIRECTORY__ + string (Path.DirectorySeparatorChar) + argv.[2]
-    let account = Account.Load(argv.[0])
+    let originalCsvContent = System.IO.File.ReadAllText argv.[0]
+    let cleanCsv, malformed = cleanCsv originalCsvContent
+
+    if malformed then File.WriteAllText ((argv.[0] + "-clean.csv"), cleanCsv)    
+
+    let account = Account.Parse(cleanCsv)
     let year = int argv.[1]
     let period = if argv.Length <= 2 then Period.All
                     else enum<Period>(int argv.[2])
