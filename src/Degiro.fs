@@ -73,7 +73,7 @@ module DegiroAccount =
                 |> Seq.filter (fun x -> x.Description.Equals "DEGIRO Transaction Fee")
                 |> Seq.sumBy (fun x -> x.Price)
 
-            { Date = descRow.Date
+            { Date = descRow.Date + descRow.Time
               Type = txnType
               Product = descRow.Product
               ProductId = productId
