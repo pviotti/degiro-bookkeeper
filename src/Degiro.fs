@@ -1,10 +1,15 @@
 // namespace StockWatch
 
-open FSharp.Data
 open System
+open System.IO
+open System.Text
 open System.Text.RegularExpressions
 
+open FSharp.Data
+
 open StockWatch
+
+let txnDescriptionRegExp = "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD)"
 
 [<Literal>]
 let accountStatementSampleCsv = """
@@ -35,9 +40,9 @@ module DegiroAccount =
             let descRow = Seq.last records // Row with txn description is always the last
 
             let matches =
-                Regex.Match(descRow.Description, "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD) \((.+)\)")
+                Regex.Match(descRow.Description, txnDescriptionRegExp)
 
-            let isSell = matches.Groups.[1].Value.Equals "Sell"
+            let txnType = if matches.Groups.[1].Value.Equals "Sell" then Sell else Buy
             let quantity = int matches.Groups.[2].Value
             let value = float matches.Groups.[3].Value
 
@@ -46,18 +51,18 @@ module DegiroAccount =
                 then EUR
                 else USD
 
-            let productId = matches.Groups.[5].Value
+            let productId = descRow.ISIN
 
             let price =
                 match valueCurrency with
                 | EUR -> descRow.Price
                 | USD ->
                     let fxRow =
-                        match isSell with
-                        | true ->
+                        match txnType with
+                        | Sell ->
                             records
                             |> Seq.find (fun x -> x.Description.Equals "FX Credit")
-                        | false ->
+                        | Buy ->
                             records
                             |> Seq.find (fun x -> x.Description.Equals "FX Debit")
 
@@ -69,7 +74,7 @@ module DegiroAccount =
                 |> Seq.sumBy (fun x -> x.Price)
 
             { Date = descRow.Date
-              Type = (if isSell then Sell else Buy)
+              Type = txnType
               Product = descRow.Product
               ProductId = productId
               ProdType = Shares // FIXME: tell apart ETF from Shares
