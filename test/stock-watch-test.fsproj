@@ -1,21 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
 
-    <IsPackable>false</IsPackable>
-    <GenerateProgramFile>false</GenerateProgramFile>
-  </PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <GenerateProgramFile>false</GenerateProgramFile>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="NUnit" Version="3.12.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0"/>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="FsUnit" Version="4.0.4"/>
+        <PackageReference Include="NUnit" Version="3.13.1"/>
+        <PackageReference Include="NUnit3TestAdapter" Version="4.0.0-beta.1"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0-preview-20210219-03"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="UnitTest1.fs"/>
-    <Compile Include="Program.fs"/>
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Test.fs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\src\stock-watch.fsproj"/>
+    </ItemGroup>
 
 </Project>
