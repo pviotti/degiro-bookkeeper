@@ -1,4 +1,4 @@
-// namespace StockWatch
+namespace StockWatch.Degiro
 
 open System
 open System.IO
@@ -7,22 +7,20 @@ open System.Text.RegularExpressions
 
 open FSharp.Data
 
-open StockWatch
-
-let txnDescriptionRegExp =
-    "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD)"
-
-[<Literal>]
-let accountStatementSampleCsv = """
-    Date,Time,Value date,Product,ISIN,Description,FX,Change,,Balance,,Order ID
-    28-10-2020,14:30,28-10-2020,ASSET DESCR,US4780000,FX Credit,1.1719,USD,563.60,USD,0.00,3aca1fc3-d622-46de-8c8b-1bec568feac5
-    12-09-2020,07:42,21-09-2020,,,FX Debit,,EUR,1.15,EUR,1018.47,
-    31-12-2020,01:31,31-12-2020,,,Flatex Interest,,EUR,-0.79,EUR,470.07,"""
-
-// Culture is set to parse dates in the dd-mm-YYY format as `Option<DateTime>` type
-type Account = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (float),,,OrderId", Culture="en-IRL">
-
 module DegiroAccount =
+
+    let txnDescriptionRegExp =
+        "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD)"
+
+    [<Literal>]
+    let accountStatementSampleCsv = """
+        Date,Time,Value date,Product,ISIN,Description,FX,Change,,Balance,,Order ID
+        28-10-2020,14:30,28-10-2020,ASSET DESCR,US4780000,FX Credit,1.1719,USD,563.60,USD,0.00,3aca1fc3-d622-46de-8c8b-1bec568feac5
+        12-09-2020,07:42,21-09-2020,,,FX Debit,,EUR,1.15,EUR,1018.47,
+        31-12-2020,01:31,31-12-2020,,,Flatex Interest,,EUR,-0.79,EUR,470.07,"""
+
+    // Culture is set to parse dates in the dd-mm-YYY format as `Option<DateTime>` type
+    type Account = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (float),,,OrderId", Culture="en-IRL">
 
     // Get all rows corresponding to some order, grouped by their OrderId
     let getAllTxnRowsGrouped (account: Account) : seq<string * seq<Account.Row>> =
@@ -34,7 +32,7 @@ module DegiroAccount =
                 | Some (x) -> x.ToString().[0..18] // XXX because some Guids can be malformed in input csv
                 | None -> "")
 
-    // Buildia transaction object (Txn) (i.e. rows corresponding to DeGiro orders)
+    // Build a transaction object (Txn) (i.e. rows corresponding to DeGiro orders)
     // by parsing multiple rows in the account corresponding to the transaction in object
     let buildTxn (txn: string * seq<Account.Row>) =
         let records = snd txn
