@@ -9,6 +9,7 @@
     <!-- <Compile Include="Finnhub.fs" /> -->
     <Compile Include="Model.fs" />    
     <Compile Include="Degiro.fs" />
+    <Compile Include="Main.fs" />
   </ItemGroup>
 
   <ItemGroup>
