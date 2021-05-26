@@ -38,58 +38,85 @@ module DegiroAccount =
         let records = snd txn
 
         try
-            let descRow = Seq.last records // Row with txn description is always the last
+            // get all rows containing a description of the transaction
+            let descRows =
+                records
+                |> Seq.filter (fun x -> Regex.IsMatch(x.Description, txnDescriptionRegExp))
+
+            assert (Seq.length descRows >= 1)
+
+            let firstDescRow = Seq.head descRows
 
             let matches =
-                Regex.Match(descRow.Description, txnDescriptionRegExp)
+                Regex.Match(firstDescRow.Description, txnDescriptionRegExp)
 
             let txnType =
-                if matches.Groups.[1].Value.Equals "Sell" then
-                    Sell
-                else
-                    Buy
-
-            let quantity = int matches.Groups.[2].Value
-            let value = float matches.Groups.[3].Value
+                match matches.Groups.[1].Value with
+                | "Sell" -> Sell
+                | "Buy" -> Buy
+                | _ -> failwith $"Error: unsupported transaction type for {firstDescRow}"
 
             let valueCurrency =
-                if matches.Groups.[4].Value.Equals(nameof EUR) then
-                    EUR
-                else
-                    USD
+                match matches.Groups.[4].Value with
+                | "EUR" -> EUR
+                | "USD" -> USD
+                | _ -> failwith $"Error: unsupported currency for {firstDescRow}"
+
+            let getFractionalQuantity (row: Account.Row) =
+                let matches =
+                    Regex.Match(row.Description, txnDescriptionRegExp)
+
+                int matches.Groups.[2].Value
+
+            let getFractionalPrice (row: Account.Row) =
+                let matches =
+                    Regex.Match(row.Description, txnDescriptionRegExp)
+
+                (float matches.Groups.[2].Value)
+                * (float matches.Groups.[3].Value)
+
+            let totQuantity =
+                descRows
+                |> Seq.map getFractionalQuantity
+                |> Seq.sum
+
+            let totValue =
+                let totalPrice =
+                    descRows |> Seq.map getFractionalPrice |> Seq.sum
+
+                totalPrice / (float totQuantity)
 
             let price =
                 match valueCurrency with
-                | EUR -> descRow.Price
+                | EUR -> descRows |> Seq.sumBy (fun x -> x.Price)
                 | USD ->
-                    let fxRow =
-                        match txnType with
-                        | Sell ->
-                            records
-                            |> Seq.find (fun x -> x.Description.Equals "FX Credit")
-                        | Buy ->
-                            records
-                            |> Seq.find (fun x -> x.Description.Equals "FX Debit")
-
-                    fxRow.Price
+                    match txnType with
+                    | Sell ->
+                        records
+                        |> Seq.filter (fun x -> x.Description.Equals "FX Credit")
+                        |> Seq.sumBy (fun x -> x.Price)
+                    | Buy ->
+                        records
+                        |> Seq.filter (fun x -> x.Description.Equals "FX Debit")
+                        |> Seq.sumBy (fun x -> x.Price)
 
             let degiroFees =
                 records
                 |> Seq.filter (fun x -> x.Description.Equals "DEGIRO Transaction Fee")
                 |> Seq.sumBy (fun x -> x.Price)
 
-            { Date = descRow.Date + descRow.Time
+            { Date = firstDescRow.Date + firstDescRow.Time
               Type = txnType
-              Product = descRow.Product
-              ProductId = descRow.ISIN
+              Product = firstDescRow.Product
+              ProductId = firstDescRow.ISIN
               ProdType = Shares // FIXME: tell apart ETF from Shares
-              Quantity = quantity
+              Quantity = totQuantity
               Fees = degiroFees
               Price = price
-              Value = value
+              Value = totValue
               ValueCurrency = valueCurrency
-              OrderId = (Option.defaultValue Guid.Empty descRow.OrderId) }
-        with ex -> failwithf "Error: %A - %s \n%A" (Seq.last records) ex.Message ex
+              OrderId = (Option.defaultValue Guid.Empty firstDescRow.OrderId) }
+        with ex -> failwithf $"Error: %A{Seq.last records} - %s{ex.Message} \n%A{ex}"
 
     // Get all sell transactions for the given period
     let getSellTxnsInPeriod (txns: seq<Txn>) (year: int) (period: Period) =
