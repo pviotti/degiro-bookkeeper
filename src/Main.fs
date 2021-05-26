@@ -32,10 +32,10 @@ let main argv =
     let timer = new Diagnostics.Stopwatch()
     timer.Start()
     let txnsGrouped = getAllTxnRowsGrouped account
-    let txns = Seq.map buildTxn txnsGrouped
+    let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
     let sellsInPeriod = getSellTxnsInPeriod txns year period
 
-    if Seq.isEmpty sellsInPeriod then
+    if List.isEmpty sellsInPeriod then
         printfn $"No sells recorded in %d{year}, period %A{period}."
         Environment.Exit 0
 
@@ -46,7 +46,7 @@ let main argv =
 
     let periodEarnings = getSellsEarnings sellsInPeriod txns
 
-    Seq.toList periodEarnings
+    periodEarnings
     |> List.iter printEarning
 
     let periodTotalEarnings =
@@ -54,7 +54,7 @@ let main argv =
 
     let periodAvgPercEarnings =
         periodEarnings
-        |> Seq.averageBy (fun x -> x.Percent)
+        |> List.averageBy (fun x -> x.Percent)
 
     printfn $"\nTot. P/L (€): %.2f{periodTotalEarnings}"
     printfn $"Avg %% P/L: %.2f{periodAvgPercEarnings}%%"

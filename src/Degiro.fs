@@ -1,7 +1,6 @@
 namespace StockWatch.Degiro
 
 open System
-open System.IO
 open System.Text
 open System.Text.RegularExpressions
 
@@ -119,10 +118,10 @@ module DegiroAccount =
         with ex -> failwithf $"Error: %A{Seq.last records} - %s{ex.Message} \n%A{ex}"
 
     // Get all sell transactions for the given period
-    let getSellTxnsInPeriod (txns: seq<Txn>) (year: int) (period: Period) =
+    let getSellTxnsInPeriod (txns: list<Txn>) (year: int) (period: Period) =
         txns
-        |> Seq.sortByDescending (fun x -> x.Date)
-        |> Seq.filter
+        |> List.sortByDescending (fun x -> x.Date)
+        |> List.filter
             (fun x ->
                 match period with
                 | Period.Initial ->
@@ -139,20 +138,20 @@ module DegiroAccount =
     // For a given Sell transaction, compute its earning by
     // going back in time to as many Buy transactions as required to match the quantity sold
     // FIXME: make it comply with Irish CGT FIFO rule
-    let computeEarning (txns: seq<Txn>) (sellTxn: Txn) =
+    let computeEarning (txns: list<Txn>) (sellTxn: Txn) =
         let buysPrecedingSell =
             txns
-            |> Seq.sortByDescending (fun x -> x.Date)
-            |> Seq.filter
+            |> List.filter
                 (fun x ->
                     x.Type = Buy
                     && x.Product = sellTxn.Product
                     && x.Date < sellTxn.Date)
+            |> List.sortByDescending (fun x -> x.Date)
 
-        let rec getTotBuyPrice (buys: seq<Txn>) (quantityToSell: int) (totBuyPrice: float) =
+        let rec getTotBuyPrice (buys: list<Txn>) (quantityToSell: int) (totBuyPrice: float) =
             if quantityToSell = 0 then
                 totBuyPrice
-            else if Seq.isEmpty buys then // Should not happen
+            elif List.isEmpty buys && quantityToSell <> 0 then // Should not happen
                 failwithf $"Error: can't find buy txns for remaining {quantityToSell} sells of {sellTxn.Product}"
             else
                 let currBuy = Seq.head buys
@@ -166,7 +165,7 @@ module DegiroAccount =
                          + (currBuy.Price / float (currBuy.Quantity))
                            * float (quantityToSell))
 
-                getTotBuyPrice (Seq.tail buys) quantityRemaining newTotalBuyPrice
+                getTotBuyPrice (List.tail buys) quantityRemaining newTotalBuyPrice
 
         let totBuyPrice =
             getTotBuyPrice buysPrecedingSell sellTxn.Quantity 0.0
@@ -175,9 +174,9 @@ module DegiroAccount =
         earning, earning / (-totBuyPrice) * 100.0
 
     // Return the Earning objects for a given sequence of sells
-    let getSellsEarnings (sells: seq<Txn>) (allTxns: seq<Txn>) : seq<Earning> =
+    let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) : list<Earning> =
         sells
-        |> Seq.map
+        |> List.map
             (fun sell ->
                 let earning, earningPercentage = computeEarning allTxns sell
 
@@ -227,7 +226,7 @@ module DegiroAccount =
             let sb = StringBuilder()
 
             rows
-            |> Seq.iter
+            |> Array.iter
                 (fun row ->
                     let strToAppend =
                         if not (row.[0..2].Equals ",,,") then
