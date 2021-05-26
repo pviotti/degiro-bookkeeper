@@ -125,8 +125,10 @@ module DegiroAccount =
                     && x.Date < sellTxn.Date)
 
         let rec getTotBuyPrice (buys: seq<Txn>) (quantityToSell: int) (totBuyPrice: float) =
-            if Seq.isEmpty buys || quantityToSell = 0 then
+            if quantityToSell = 0 then
                 totBuyPrice
+            else if Seq.isEmpty buys then // Should not happen
+                failwithf $"Error: can't find buy txns for remaining {quantityToSell} sells of {sellTxn.Product}"
             else
                 let currBuy = Seq.head buys
 
