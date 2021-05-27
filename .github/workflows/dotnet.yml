@@ -44,11 +44,11 @@ jobs:
       with:
         token: '${{ secrets.CODECOV_TOKEN }}' # optional
         # Comma-separated list of files to upload
-        files: Cobertura.xml # optional
+        files: ./coveragereport/Cobertura.xml # optional
         directory: ./coveragereport/
         flags: unittests
         name: 'Degiro Accounting coverage'
         fail_ci_if_error: true
-        path_to_write_report: ./coverage/codecov_report.txt
+        path_to_write_report: ./coveragereport/codecov_report.txt
         verbose: true
       
