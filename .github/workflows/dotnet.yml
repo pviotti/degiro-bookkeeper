@@ -22,4 +22,30 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage"
+    - name: ReportGenerator    
+      uses: danielpalme/ReportGenerator-GitHub-Action@4.8.9
+      with:
+        reports: '**/TestResults/**/coverage.cobertura.xml'
+        targetdir: 'coveragereport' 
+        reporttypes: 'Cobertura;'
+        verbosity: 'Info' 
+        tag: '${{ github.run_number }}_${{ github.run_id }}'
+        toolpath: 'reportgeneratortool'
+    - name: Upload coverage report artifact
+      uses: actions/upload-artifact@v2.2.3
+      with:
+        name: CoverageReport 
+        path: coveragereport
+    - name: Codecov
+      uses: codecov/codecov-action@v1.5.0
+      with:
+        token: '${{ secrets.CODECOV_TOKEN }}'
+        files: ./coveragereport/Cobertura.xml
+        directory: ./coveragereport/
+        flags: unittests
+        name: 'Degiro Accounting coverage'
+        fail_ci_if_error: true
+        path_to_write_report: ./coveragereport/codecov_report.txt
+        verbose: true
+      
