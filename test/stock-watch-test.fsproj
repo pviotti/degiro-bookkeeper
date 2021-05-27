@@ -8,18 +8,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FsUnit" Version="4.0.4"/>
-        <PackageReference Include="NUnit" Version="3.13.1"/>
-        <PackageReference Include="NUnit3TestAdapter" Version="4.0.0-beta.1"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0-preview-20210219-03"/>
+        <PackageReference Include="coverlet.collector" Version="3.0.3">
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="FsUnit" Version="4.0.4" />
+        <PackageReference Include="NUnit" Version="3.13.1" />
+        <PackageReference Include="NUnit3TestAdapter" Version="4.0.0-beta.1" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.10.0-preview-20210219-03" />
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="Test.fs"/>
+        <Compile Include="Test.fs" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\src\stock-watch.fsproj"/>
+        <ProjectReference Include="..\src\stock-watch.fsproj" />
     </ItemGroup>
 
 </Project>
