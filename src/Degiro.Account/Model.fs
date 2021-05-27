@@ -1,4 +1,4 @@
-namespace StockWatch.Degiro
+namespace Degiro
 
 open System
 

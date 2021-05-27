@@ -3,8 +3,8 @@ module StockWatchTest
 open NUnit.Framework
 open FsUnit
 
-open StockWatch.Degiro
-open StockWatch.Degiro.DegiroAccount
+open Degiro
+open Degiro.Account
 
 open System
 
@@ -26,7 +26,7 @@ let ``BuildTxn with many description rows in USD`` () =
         16-02-2021,15:30,16-02-2021,ACME INC. COM,CODE123,DEGIRO Transaction Fee,,EUR,-0.50,EUR,702.72,9f8a14c4-ad5c-4a92-99af-60a69e8b584e
         16-02-2021,15:30,16-02-2021,ACME INC. COM,CODE123,Buy 4 ACME INC. COM@9.45 USD (CODE123),,USD,-37.80,USD,-37.80,9f8a14c4-ad5c-4a92-99af-60a69e8b584e"""
 
-    let account = Account.Parse(testRows)
+    let account = AccountCsv.Parse(testRows)
     let txnsGrouped = getAllTxnRowsGrouped account
     let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 
@@ -54,7 +54,7 @@ let ``BuildTxn with many description rows in EUR`` () =
         08-06-2020,09:05,08-06-2020,PRODUCT IN EUR,CODE321,Buy 2 PRODUCT IN EUR@9.598 EUR (CODE321),,EUR,-19.20,EUR,67.45,e30677c2-cf9e-4dac-8405-f2361f60e0fd
         08-06-2020,09:05,08-06-2020,PRODUCT IN EUR,CODE321,Buy 3 PRODUCT IN EUR@9.598 EUR (CODE321),,EUR,-28.79,EUR,86.65,e30677c2-cf9e-4dac-8405-f2361f60e0fd"""
 
-    let account = Account.Parse(testRows)
+    let account = AccountCsv.Parse(testRows)
     let txnsGrouped = getAllTxnRowsGrouped account
     let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 

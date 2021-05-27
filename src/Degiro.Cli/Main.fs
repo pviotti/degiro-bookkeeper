@@ -1,8 +1,8 @@
 open System
 open System.IO
 
-open StockWatch.Degiro
-open StockWatch.Degiro.DegiroAccount
+open Degiro
+open Degiro.Account
 
 [<EntryPoint>]
 let main argv =
@@ -20,7 +20,7 @@ let main argv =
     if malformed then
         File.WriteAllText((argv.[0] + "-clean.csv"), cleanCsv)
 
-    let account = Account.Parse(cleanCsv)
+    let account = AccountCsv.Parse(cleanCsv)
     let year = int argv.[1]
 
     let period =
