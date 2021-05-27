@@ -1,4 +1,4 @@
-namespace StockWatch.Degiro
+namespace Degiro
 
 open System
 open System.Text
@@ -6,7 +6,7 @@ open System.Text.RegularExpressions
 
 open FSharp.Data
 
-module DegiroAccount =
+module Account =
 
     let txnDescriptionRegExp =
         "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD)"
@@ -19,10 +19,10 @@ module DegiroAccount =
         31-12-2020,01:31,31-12-2020,,,Flatex Interest,,EUR,-0.79,EUR,470.07,"""
 
     // Culture is set to parse dates in the dd-mm-YYY format as `Option<DateTime>` type
-    type Account = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (float),,,OrderId", Culture="en-IRL">
+    type AccountCsv = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (float),,,OrderId", Culture="en-IRL">
 
     // Get all rows corresponding to some order, grouped by their OrderId
-    let getAllTxnRowsGrouped (account: Account) : seq<string * seq<Account.Row>> =
+    let getAllTxnRowsGrouped (account: AccountCsv) : seq<string * seq<AccountCsv.Row>> =
         account.Rows
         |> Seq.filter (fun row -> Option.isSome row.OrderId)
         |> Seq.groupBy
@@ -33,7 +33,7 @@ module DegiroAccount =
 
     // Build a transaction object (Txn) (i.e. rows corresponding to DeGiro orders)
     // by parsing multiple rows in the account corresponding to the transaction in object
-    let buildTxn (txn: string * seq<Account.Row>) =
+    let buildTxn (txn: string * seq<AccountCsv.Row>) =
         let records = snd txn
 
         try
@@ -61,13 +61,13 @@ module DegiroAccount =
                 | "USD" -> USD
                 | _ -> failwith $"Error: unsupported currency for {firstDescRow}"
 
-            let getFractionalQuantity (row: Account.Row) =
+            let getFractionalQuantity (row: AccountCsv.Row) =
                 let matches =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
                 int matches.Groups.[2].Value
 
-            let getFractionalPrice (row: Account.Row) =
+            let getFractionalPrice (row: AccountCsv.Row) =
                 let matches =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
@@ -189,7 +189,7 @@ module DegiroAccount =
     // let yearCgt = 0.33 * yearTotalEarning
 
     // Compute total DeGiro Fees (txn fees and stock exchange fees)
-    let getTotalYearFees (account: Account) (year: int) =
+    let getTotalYearFees (account: AccountCsv) (year: int) =
         account.Rows
         |> Seq.filter
             (fun x ->
@@ -199,7 +199,7 @@ module DegiroAccount =
         |> Seq.sumBy (fun x -> x.Price)
 
     // Get deposits amounts
-    let getTotalDeposits (account: Account) =
+    let getTotalDeposits (account: AccountCsv) =
         account.Rows
         |> Seq.filter
             (fun x ->
@@ -207,7 +207,7 @@ module DegiroAccount =
                 || x.Description.Equals "flatex Deposit")
         |> Seq.sumBy (fun x -> x.Price)
 
-    let getTotalYearDeposits (account: Account) (year: int) =
+    let getTotalYearDeposits (account: AccountCsv) (year: int) =
         account.Rows
         |> Seq.filter
             (fun x ->

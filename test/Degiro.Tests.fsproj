@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\src\stock-watch.fsproj" />
+        <ProjectReference Include="..\src\Degiro.Account\Degiro.Account.fsproj" />
     </ItemGroup>
 
 </Project>
