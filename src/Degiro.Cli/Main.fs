@@ -72,14 +72,14 @@ let main argv =
         File.WriteAllText(newFilePath, cleanCsv)
         printfn $"Cleaned csv file has been written to {newFilePath}.\n"
 
-    let account = AccountCsv.Parse(cleanCsv)
+    let rows = AccountCsv.Parse(cleanCsv).Rows
 
 #if DEBUG
     let timer = Diagnostics.Stopwatch()
     timer.Start()
 #endif
 
-    let txnsGrouped = getAllTxnRowsGrouped account
+    let txnsGrouped = getRowsGroupedByOrderId rows
 
     let txns =
         Seq.map buildTxn txnsGrouped |> Seq.toList
@@ -104,9 +104,9 @@ let main argv =
 Tot. P/L (€): %.2f{periodTotalEarnings}
 Avg %% P/L: %.2f{periodAvgPercEarnings}%%"""
 
-    let yearTotFees = getTotalYearFees account year
-    let totDeposits = getTotalDeposits account
-    let totYearDeposits = getTotalYearDeposits account year
+    let yearTotFees = getTotalYearFees rows year
+    let totDeposits = getTotalDeposits rows
+    let totYearDeposits = getTotalYearDeposits rows year
 
     printfn
         $"""

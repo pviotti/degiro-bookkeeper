@@ -22,9 +22,9 @@ module Account =
     type AccountCsv = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (decimal?),,,OrderId", Culture="en-IRL">
     type Row = AccountCsv.Row
 
-    // Get all rows corresponding to some order, grouped by their OrderId
-    let getAllTxnRowsGrouped (account: AccountCsv) : seq<string * seq<Row>> =
-        account.Rows
+    /// Get all rows corresponding to some order, grouped by their OrderId
+    let getRowsGroupedByOrderId (rows: seq<Row>) : seq<string * seq<Row>> =
+        rows
         |> Seq.filter (fun row -> Option.isSome row.OrderId)
         |> Seq.groupBy
             (fun row ->
@@ -32,8 +32,8 @@ module Account =
                 | Some (x) -> x.ToString().[0..18] // XXX because some Guids can be malformed in input csv
                 | None -> "")
 
-    // Build a transaction object (Txn) (i.e. rows corresponding to DeGiro orders)
-    // by parsing multiple rows in the account corresponding to the transaction in object
+    /// Build a transaction object (Txn) (i.e. rows corresponding to DeGiro orders)
+    /// by parsing multiple rows in the account corresponding to the transaction in object
     let buildTxn (txn: string * seq<Row>) =
         let allRows = snd txn
 
@@ -103,7 +103,6 @@ module Account =
 
                     let totSellQuantity = getTotQuantity descRows isSell
                     let totBuyQuantity = getTotQuantity descRows isBuy
-                    assert (totBuyQuantity = totSellQuantity)
 
                     let totalPriceSells =
                         descRows
@@ -117,6 +116,7 @@ module Account =
                         |> Seq.map getFractionalPrice
                         |> Seq.sum
 
+                    assert (totBuyQuantity = totSellQuantity)
                     assert (totalPriceBuys = totalPriceSells)
                     assert (degiroFees = 0.0m)
                     0.0m, 0.0m, 0
@@ -158,7 +158,7 @@ module Account =
               OrderId = (Option.defaultValue Guid.Empty firstDescRow.OrderId) }
         with ex -> failwithf $"Error: %A{Seq.last allRows} - %s{ex.Message} \n%A{ex}"
 
-    // Get all sell transactions for the given period
+    /// Get all sell transactions for the given year and Irish tax period
     let getSellTxnsInPeriod (txns: list<Txn>) (year: int) (period: Period) =
         txns
         |> List.sortByDescending (fun x -> x.Date)
@@ -176,8 +176,8 @@ module Account =
                 | _ -> x.Date.Year = year && x.Type = Sell)
 
 
-    // For a given Sell transaction, compute its earning by
-    // going back in time to as many Buy transactions as required to match the quantity sold
+    /// For a given Sell transaction, compute its earning by
+    /// going back in time to as many Buy transactions as required to match the quantity sold
     // FIXME: make it comply with Irish CGT FIFO rule
     let computeEarning (txns: list<Txn>) (sellTxn: Txn) =
         let buysPrecedingSell =
@@ -214,7 +214,7 @@ module Account =
         let earning = sellTxn.Price + totBuyPrice
         earning, earning / (-totBuyPrice) * 100.0m
 
-    // Return the Earning objects for a given sequence of sells
+    /// Return the Earning objects for a given sequence of sells
     let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) : list<Earning> =
         sells
         |> List.map
@@ -226,9 +226,9 @@ module Account =
                   Value = earning
                   Percent = earningPercentage })
 
-    // Compute total DeGiro Fees (txn fees and stock exchange fees)
-    let getTotalYearFees (account: AccountCsv) (year: int) =
-        account.Rows
+    /// Compute total DeGiro Fees (txn fees and stock exchange fees)
+    let getTotalYearFees (rows: seq<Row>) (year: int) =
+        rows
         |> Seq.filter
             (fun x ->
                 x.Date.Year = year
@@ -236,17 +236,17 @@ module Account =
                     || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
         |> Seq.sumBy (fun x -> x.Price.Value)
 
-    // Get deposits amounts
-    let getTotalDeposits (account: AccountCsv) =
-        account.Rows
+    /// Get deposits amounts
+    let getTotalDeposits (rows: seq<Row>) =
+        rows
         |> Seq.filter
             (fun x ->
                 x.Description.Equals "Deposit"
                 || x.Description.Equals "flatex Deposit")
         |> Seq.sumBy (fun x -> x.Price.Value)
 
-    let getTotalYearDeposits (account: AccountCsv) (year: int) =
-        account.Rows
+    let getTotalYearDeposits (rows: seq<Row>) (year: int) =
+        rows
         |> Seq.filter
             (fun x ->
                 (x.Description.Equals "Deposit"
