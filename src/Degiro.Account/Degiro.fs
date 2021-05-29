@@ -254,6 +254,9 @@ module Account =
                 && x.Date.Year = year)
         |> Seq.sumBy (fun x -> x.Price.Value)
 
+    /// Clean a CSV string from malformed rows.
+    /// Returns the clean string and
+    /// a boolean stating if the input string was malformed.
     let cleanCsv (csvContent: string) =
         let rows = csvContent.Split '\n'
 
@@ -276,6 +279,6 @@ module Account =
                     sb.Append strToAppend |> ignore
                     sb.AppendLine() |> ignore)
 
-            sb.ToString(), isMalformed
+            sb.ToString().Trim(), isMalformed
         else
             csvContent, isMalformed
