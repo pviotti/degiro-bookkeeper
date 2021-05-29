@@ -1,70 +1,120 @@
 open System
 open System.IO
+open System.Reflection
+
+open Argu
 
 open Degiro
 open Degiro.Account
 
-[<EntryPoint>]
-let main argv =
+let VERSION =
+    Assembly
+        .GetExecutingAssembly()
+        .GetName()
+        .Version.ToString()
 
-    if argv.Length < 3 then
-        eprintfn "Error: missing parameter"
-        eprintfn "Usage: stock-watcher <path/to/statement.csv> <year> [<1,2>]"
-        Environment.Exit 1
+let PROGRAM_NAME = "degiro"
 
-    //let [<Literal>] csvFile = __SOURCE_DIRECTORY__ + "/account.csv"
-    // let csvFile = __SOURCE_DIRECTORY__ + string (Path.DirectorySeparatorChar) + argv.[2]
-    let originalCsvContent = File.ReadAllText argv.[0]
-    let cleanCsv, malformed = cleanCsv originalCsvContent
+type CliArguments =
+    | [<NoAppSettings>] Version
+    | [<Mandatory; MainCommand>] CsvFilePath of file: string
+    | [<AltCommandLine("-y")>] Year of year: int
+    | [<AltCommandLine("-p")>] Period of period: int
 
-    if malformed then
-        File.WriteAllText((argv.[0] + "-clean.csv"), cleanCsv)
+    interface IArgParserTemplate with
+        member s.Usage =
+            match s with
+            | Version _ -> $"print {PROGRAM_NAME} version"
+            | CsvFilePath _ -> "path of Degiro account csv file"
+            | Year _ -> "year"
+            | Period _ -> "Irish tax period (1: Jan-Nov; 2: Dec)"
 
-    let account = AccountCsv.Parse(cleanCsv)
-    let year = int argv.[1]
 
-    let period =
-        if argv.Length <= 2 then
-            Period.All
-        else
-            enum<Period> (int argv.[2])
+let printVersion () = printfn $"{PROGRAM_NAME} v{VERSION}"
 
-    let timer = new Diagnostics.Stopwatch()
-    timer.Start()
-    let txnsGrouped = getAllTxnRowsGrouped account
-    let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
-    let sellsInPeriod = getSellTxnsInPeriod txns year period
-
-    if List.isEmpty sellsInPeriod then
-        printfn $"No sells recorded in %d{year}, period %A{period}."
-        Environment.Exit 0
-
+let printEarnings earnings =
     printfn "%-10s %-40s %7s %8s\n%s" "Date" "Product" "P/L (€)" "P/L %" (String.replicate 68 "-")
 
     let printEarning (e: Earning) =
         printfn "%s %-40s %7.2f %7.1f%%" (e.Date.ToString("yyyy-MM-dd")) e.Product e.Value e.Percent
 
-    let periodEarnings = getSellsEarnings sellsInPeriod txns
+    earnings |> List.iter printEarning
 
-    periodEarnings
-    |> List.iter printEarning
+[<EntryPoint>]
+let main argv =
+    let parser =
+        ArgumentParser.Create<CliArguments>(
+            programName = PROGRAM_NAME,
+            errorHandler = ProcessExiter(),
+            checkStructure = false
+        )
 
-    let periodTotalEarnings =
-        periodEarnings |> Seq.sumBy (fun x -> x.Value)
+    let args = parser.ParseCommandLine(argv)
 
-    let periodAvgPercEarnings =
-        periodEarnings
-        |> List.averageBy (fun x -> x.Percent)
+    if args.Contains Version then
+        printVersion ()
+        Environment.Exit 0
 
-    printfn $"\nTot. P/L (€): %.2f{periodTotalEarnings}"
-    printfn $"Avg %% P/L: %.2f{periodAvgPercEarnings}%%"
+    let csvFilePath = args.GetResult CsvFilePath
+    let year = args.GetResult Year
+
+    let period =
+        if args.Contains Period then
+            enum<Period> (args.GetResult Period)
+        else
+            Period.All
+
+    let originalCsvContent = File.ReadAllText csvFilePath
+    let cleanCsv, isMalformed = cleanCsv originalCsvContent
+
+    if isMalformed then
+        let newFilePath = csvFilePath.[..csvFilePath.Length - 5] + "-clean.csv"
+        File.WriteAllText(newFilePath, cleanCsv)
+        printfn $"Cleaned csv file has been written to {newFilePath}.\n"
+
+    let account = AccountCsv.Parse(cleanCsv)
+
+#if DEBUG
+    let timer = Diagnostics.Stopwatch()
+    timer.Start()
+#endif
+
+    let txnsGrouped = getAllTxnRowsGrouped account
+
+    let txns =
+        Seq.map buildTxn txnsGrouped |> Seq.toList
+
+    let sellsInPeriod = getSellTxnsInPeriod txns year period
+
+    if List.isEmpty sellsInPeriod then
+        printfn $"No sells recorded in %d{year}, period: %A{period}."
+    else
+        let periodEarnings = getSellsEarnings sellsInPeriod txns
+        printEarnings periodEarnings
+
+        let periodTotalEarnings =
+            periodEarnings |> List.sumBy (fun x -> x.Value)
+
+        let periodAvgPercEarnings =
+            periodEarnings
+            |> List.averageBy (fun x -> x.Percent)
+
+        printfn
+            $"""
+Tot. P/L (€): %.2f{periodTotalEarnings}
+Avg %% P/L: %.2f{periodAvgPercEarnings}%%"""
 
     let yearTotFees = getTotalYearFees account year
-    printfn $"\nTot. DeGiro fees in %d{year} (€): %.2f{yearTotFees}"
-
     let totDeposits = getTotalDeposits account
     let totYearDeposits = getTotalYearDeposits account year
-    printfn $"\nTot. deposits (€): %.2f{totDeposits}"
-    printfn $"Tot. deposits in %d{year} (€): %.2f{totYearDeposits}"
+
+    printfn
+        $"""
+Tot. DeGiro fees in %d{year} (€): %.2f{yearTotFees}
+Tot. deposits in %d{year} (€): %.2f{totYearDeposits}
+Tot. deposits (€): %.2f{totDeposits}"""
+
+#if DEBUG
     printfn $"\nElapsed time: {timer.ElapsedMilliseconds} ms"
+#endif
     0
