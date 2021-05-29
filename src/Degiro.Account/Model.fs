@@ -21,19 +21,19 @@ type Txn =
       ProductId: string
       ProdType: ProductType
       Quantity: int
-      Fees: float
-      Price: float
-      Value: float
+      Fees: decimal
+      Price: decimal
+      Value: decimal
       ValueCurrency: Currency
       OrderId: Guid }
 
 type Earning =
     { Date: DateTime
       Product: string
-      Value: float
-      Percent: float }
+      Value: decimal
+      Percent: decimal }
 
 type Period =
-    | Initial=1
-    | Later=2
-    | All=3
+    | Initial = 1
+    | Later = 2
+    | All = 3

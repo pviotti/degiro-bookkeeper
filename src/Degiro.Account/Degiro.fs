@@ -19,10 +19,11 @@ module Account =
         31-12-2020,01:31,31-12-2020,,,Flatex Interest,,EUR,-0.79,EUR,470.07,"""
 
     // Culture is set to parse dates in the dd-mm-YYY format as `Option<DateTime>` type
-    type AccountCsv = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (float),,,OrderId", Culture="en-IRL">
+    type AccountCsv = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (decimal?),,,OrderId", Culture="en-IRL">
+    type Row = AccountCsv.Row
 
     // Get all rows corresponding to some order, grouped by their OrderId
-    let getAllTxnRowsGrouped (account: AccountCsv) : seq<string * seq<AccountCsv.Row>> =
+    let getAllTxnRowsGrouped (account: AccountCsv) : seq<string * seq<Row>> =
         account.Rows
         |> Seq.filter (fun row -> Option.isSome row.OrderId)
         |> Seq.groupBy
@@ -33,76 +34,116 @@ module Account =
 
     // Build a transaction object (Txn) (i.e. rows corresponding to DeGiro orders)
     // by parsing multiple rows in the account corresponding to the transaction in object
-    let buildTxn (txn: string * seq<AccountCsv.Row>) =
-        let records = snd txn
+    let buildTxn (txn: string * seq<Row>) =
+        let allRows = snd txn
 
         try
             // get all rows containing a description of the transaction
             let descRows =
-                records
+                allRows
                 |> Seq.filter (fun x -> Regex.IsMatch(x.Description, txnDescriptionRegExp))
 
             assert (Seq.length descRows >= 1)
 
-            let firstDescRow = Seq.head descRows
+            let getTxnTypeAndCurrency (row: Row) =
+                let matches =
+                    Regex.Match(row.Description, txnDescriptionRegExp)
 
-            let matches =
-                Regex.Match(firstDescRow.Description, txnDescriptionRegExp)
+                let txnType =
+                    match matches.Groups.[1].Value with
+                    | "Sell" -> Sell
+                    | "Buy" -> Buy
+                    | _ -> failwith $"Error: unsupported transaction type for %A{row}"
 
-            let txnType =
-                match matches.Groups.[1].Value with
-                | "Sell" -> Sell
-                | "Buy" -> Buy
-                | _ -> failwith $"Error: unsupported transaction type for {firstDescRow}"
+                let valueCurrency =
+                    match matches.Groups.[4].Value with
+                    | "EUR" -> EUR
+                    | "USD" -> USD
+                    | _ -> failwith $"Error: unsupported currency for %A{row}"
 
-            let valueCurrency =
-                match matches.Groups.[4].Value with
-                | "EUR" -> EUR
-                | "USD" -> USD
-                | _ -> failwith $"Error: unsupported currency for {firstDescRow}"
+                txnType, valueCurrency
 
-            let getFractionalQuantity (row: AccountCsv.Row) =
+            let getFractionalQuantity (row: Row) =
                 let matches =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
                 int matches.Groups.[2].Value
 
-            let getFractionalPrice (row: AccountCsv.Row) =
+            let getFractionalPrice (row: Row) =
                 let matches =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
-                (float matches.Groups.[2].Value)
-                * (float matches.Groups.[3].Value)
+                (decimal matches.Groups.[2].Value)
+                * (decimal matches.Groups.[3].Value)
 
-            let totQuantity =
-                descRows
+            let getTotQuantity (rows: seq<Row>) (filter: Row -> bool) =
+                rows
+                |> Seq.filter filter
                 |> Seq.map getFractionalQuantity
                 |> Seq.sum
 
-            let totValue =
-                let totalPrice =
-                    descRows |> Seq.map getFractionalPrice |> Seq.sum
-
-                totalPrice / (float totQuantity)
-
-            let price =
-                match valueCurrency with
-                | EUR -> descRows |> Seq.sumBy (fun x -> x.Price)
-                | USD ->
-                    match txnType with
-                    | Sell ->
-                        records
-                        |> Seq.filter (fun x -> x.Description.Equals "FX Credit")
-                        |> Seq.sumBy (fun x -> x.Price)
-                    | Buy ->
-                        records
-                        |> Seq.filter (fun x -> x.Description.Equals "FX Debit")
-                        |> Seq.sumBy (fun x -> x.Price)
+            let firstDescRow = Seq.last descRows
+            let txnType, valueCurrency = getTxnTypeAndCurrency firstDescRow
 
             let degiroFees =
-                records
-                |> Seq.filter (fun x -> x.Description.Equals "DEGIRO Transaction Fee")
-                |> Seq.sumBy (fun x -> x.Price)
+                allRows
+                |> Seq.filter (fun (x: Row) -> x.Description.Equals "DEGIRO Transaction Fee")
+                |> Seq.sumBy (fun (x: Row) -> x.Price.Value)
+
+            let price, totValue, totQuantity =
+                if not (Seq.forall (fun x -> (txnType, valueCurrency) = (getTxnTypeAndCurrency x)) descRows) then
+                    // if the order contains Buy and Sell transactions, then
+                    // it's a case of cancelled and compensated transaction
+                    // and the resulting Tnx should be a Buy with 0 quantity
+                    let isSell =
+                        fun (x: Row) -> x.Description.StartsWith "Sell"
+
+                    let isBuy =
+                        fun (x: Row) -> x.Description.StartsWith "Buy"
+
+                    let totSellQuantity = getTotQuantity descRows isSell
+                    let totBuyQuantity = getTotQuantity descRows isBuy
+                    assert (totBuyQuantity = totSellQuantity)
+
+                    let totalPriceSells =
+                        descRows
+                        |> Seq.filter isSell
+                        |> Seq.map getFractionalPrice
+                        |> Seq.sum
+
+                    let totalPriceBuys =
+                        descRows
+                        |> Seq.filter isBuy
+                        |> Seq.map getFractionalPrice
+                        |> Seq.sum
+
+                    assert (totalPriceBuys = totalPriceSells)
+                    assert (degiroFees = 0.0m)
+                    0.0m, 0.0m, 0
+                else
+                    let totQuantity = getTotQuantity descRows (fun _ -> true)
+
+                    let totValue =
+                        let totalPrice =
+                            descRows |> Seq.map getFractionalPrice |> Seq.sum
+
+                        totalPrice / (decimal totQuantity)
+
+                    let price =
+                        match valueCurrency with
+                        | EUR -> descRows |> Seq.sumBy (fun x -> x.Price.Value)
+                        | USD ->
+                            match txnType with
+                            | Sell ->
+                                allRows
+                                |> Seq.filter (fun x -> x.Description.Equals "FX Credit")
+                                |> Seq.sumBy (fun x -> x.Price.Value)
+                            | Buy ->
+                                allRows
+                                |> Seq.filter (fun x -> x.Description.Equals "FX Debit")
+                                |> Seq.sumBy (fun x -> x.Price.Value)
+
+                    price, totValue, totQuantity
 
             { Date = firstDescRow.Date + firstDescRow.Time
               Type = txnType
@@ -115,7 +156,7 @@ module Account =
               Value = totValue
               ValueCurrency = valueCurrency
               OrderId = (Option.defaultValue Guid.Empty firstDescRow.OrderId) }
-        with ex -> failwithf $"Error: %A{Seq.last records} - %s{ex.Message} \n%A{ex}"
+        with ex -> failwithf $"Error: %A{Seq.last allRows} - %s{ex.Message} \n%A{ex}"
 
     // Get all sell transactions for the given period
     let getSellTxnsInPeriod (txns: list<Txn>) (year: int) (period: Period) =
@@ -148,11 +189,11 @@ module Account =
                     && x.Date < sellTxn.Date)
             |> List.sortByDescending (fun x -> x.Date)
 
-        let rec getTotBuyPrice (buys: list<Txn>) (quantityToSell: int) (totBuyPrice: float) =
+        let rec getTotBuyPrice (buys: list<Txn>) (quantityToSell: int) (totBuyPrice: decimal) =
             if quantityToSell = 0 then
                 totBuyPrice
             elif List.isEmpty buys && quantityToSell <> 0 then // Should not happen
-                failwithf $"Error: can't find buy txns for remaining {quantityToSell} sells of {sellTxn.Product}"
+                failwithf $"Error: can't find buy txns for remaining {quantityToSell} sells of %A{sellTxn}"
             else
                 let currBuy = Seq.head buys
 
@@ -162,16 +203,16 @@ module Account =
                     else
                         0,
                         (totBuyPrice
-                         + (currBuy.Price / float (currBuy.Quantity))
-                           * float (quantityToSell))
+                         + (currBuy.Price / decimal currBuy.Quantity)
+                           * decimal quantityToSell)
 
                 getTotBuyPrice (List.tail buys) quantityRemaining newTotalBuyPrice
 
         let totBuyPrice =
-            getTotBuyPrice buysPrecedingSell sellTxn.Quantity 0.0
+            getTotBuyPrice buysPrecedingSell sellTxn.Quantity 0.0m
 
         let earning = sellTxn.Price + totBuyPrice
-        earning, earning / (-totBuyPrice) * 100.0
+        earning, earning / (-totBuyPrice) * 100.0m
 
     // Return the Earning objects for a given sequence of sells
     let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) : list<Earning> =
@@ -185,9 +226,6 @@ module Account =
                   Value = earning
                   Percent = earningPercentage })
 
-    // TODO Compute CGT to pay
-    // let yearCgt = 0.33 * yearTotalEarning
-
     // Compute total DeGiro Fees (txn fees and stock exchange fees)
     let getTotalYearFees (account: AccountCsv) (year: int) =
         account.Rows
@@ -196,7 +234,7 @@ module Account =
                 x.Date.Year = year
                 && (x.Description.Equals "DEGIRO Transaction Fee"
                     || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
-        |> Seq.sumBy (fun x -> x.Price)
+        |> Seq.sumBy (fun x -> x.Price.Value)
 
     // Get deposits amounts
     let getTotalDeposits (account: AccountCsv) =
@@ -205,7 +243,7 @@ module Account =
             (fun x ->
                 x.Description.Equals "Deposit"
                 || x.Description.Equals "flatex Deposit")
-        |> Seq.sumBy (fun x -> x.Price)
+        |> Seq.sumBy (fun x -> x.Price.Value)
 
     let getTotalYearDeposits (account: AccountCsv) (year: int) =
         account.Rows
@@ -214,15 +252,15 @@ module Account =
                 (x.Description.Equals "Deposit"
                  || x.Description.Equals "flatex Deposit")
                 && x.Date.Year = year)
-        |> Seq.sumBy (fun x -> x.Price)
+        |> Seq.sumBy (fun x -> x.Price.Value)
 
     let cleanCsv (csvContent: string) =
         let rows = csvContent.Split '\n'
 
-        let malformed =
+        let isMalformed =
             Array.Exists(rows, (fun row -> (row.[0..2].Equals ",,,")))
 
-        if malformed then
+        if isMalformed then
             let sb = StringBuilder()
 
             rows
@@ -238,6 +276,6 @@ module Account =
                     sb.Append strToAppend |> ignore
                     sb.AppendLine() |> ignore)
 
-            sb.ToString(), malformed
+            sb.ToString(), isMalformed
         else
-            csvContent, malformed
+            csvContent, isMalformed
