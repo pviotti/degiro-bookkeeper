@@ -1,3 +1,5 @@
+namespace Degiro.Tests
+
 open NUnit.Framework
 open FsUnit
 
@@ -6,10 +8,10 @@ open Degiro.Account
 
 open System
 
-let header =
-    """Date,Time,Value date,Product,ISIN,Description,FX,Change,,Balance,,Order ID"""
-
 module AccountTests =
+
+    let header =
+        """Date,Time,Value date,Product,ISIN,Description,FX,Change,,Balance,,Order ID"""
 
     [<Test>]
     let ``BuildTxn with many description rows in USD`` () =
@@ -29,8 +31,8 @@ module AccountTests =
             16-02-2021,15:30,16-02-2021,ACME INC. COM,CODE123,DEGIRO Transaction Fee,,EUR,-0.50,EUR,702.72,9f8a14c4-ad5c-4a92-99af-60a69e8b584e
             16-02-2021,15:30,16-02-2021,ACME INC. COM,CODE123,Buy 4 ACME INC. COM@9.45 USD (CODE123),,USD,-37.80,USD,-37.80,9f8a14c4-ad5c-4a92-99af-60a69e8b584e"""
 
-        let account = AccountCsv.Parse(testRows)
-        let txnsGrouped = getAllTxnRowsGrouped account
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
 
         let txns =
             Seq.map buildTxn txnsGrouped |> Seq.toList
@@ -62,8 +64,8 @@ module AccountTests =
             08-06-2020,09:05,08-06-2020,PRODUCT IN EUR,CODE321,Buy 2 PRODUCT IN EUR@9.598 EUR (CODE321),,EUR,-19.20,EUR,67.45,e30677c2-cf9e-4dac-8405-f2361f60e0fd
             08-06-2020,09:05,08-06-2020,PRODUCT IN EUR,CODE321,Buy 3 PRODUCT IN EUR@9.598 EUR (CODE321),,EUR,-28.79,EUR,86.65,e30677c2-cf9e-4dac-8405-f2361f60e0fd"""
 
-        let account = AccountCsv.Parse(testRows)
-        let txnsGrouped = getAllTxnRowsGrouped account
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
 
         let txns =
             Seq.map buildTxn txnsGrouped |> Seq.toList
@@ -102,8 +104,8 @@ module AccountTests =
     30-01-2020,09:06,30-01-2020,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-0.02,EUR,307.96,c6aead59-29c2-40f4-8158-b92cc9b6867e
     30-01-2020,09:06,30-01-2020,ACME Inc,CODE123,Buy 10 ACME Inc@7.215 USD (CODE123),,USD,-72.15,USD,-72.15,c6aead59-29c2-40f4-8158-b92cc9b6867e"""
 
-        let account = AccountCsv.Parse(testRows)
-        let txnsGrouped = getAllTxnRowsGrouped account
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
 
         let txns =
             Seq.map buildTxn txnsGrouped |> Seq.toList
@@ -123,50 +125,3 @@ module AccountTests =
 
         txns |> should haveLength 1
         txns.[0] |> should equal expectedTxn
-
-module CsvParsingTests =
-
-    [<Test>]
-    let ``Clean a malformed CSV string`` () =
-        // Degiro account CSV files have malformed rows, as the following
-        let malformedRows = """
-10-09-2020,21:37,10-09-2020,SHARE NAME,CODE123,FX Debit,,EUR,-659995.30,EUR,663.86,df793c8a-2033-43c1-
-,,,,,,,,,,,abd3-6d415682f99f
-26-06-2020,21:15,26-06-2020,SHARE NAME A,CODE123,Sell 5 ACME Inc@213 USD,,USD,1065.00,USD,1065.64,5092d5ff-ae52-4620-
-,,,,,(IE00B4BNMY34),,,,,,8bd1-d715b7897812
-26-06-2020,16:01,26-06-2020,SHARE NAME,CODE123,"Money Market fund conversion: Buy 0.000229 at 9,934.3851 EUR",,,,EUR,164.81,
-26-06-2020,09:24,25-06-2020,SHARE NAME 123,CODE123,Dividend,,USD,0.64,USD,0.64,
-30-01-2020,10:50,30-01-2020,SHARE NAME B,CODE123,Sell 10 ACME Inc 2@7.215 USD,,USD,72.15,USD,72.15,c6aead59-29c2-40f4-8158-b92cc9b6867e
-,,,,,(IE00B1XNHC34),,,,,,
-30-01-2020,09:06,30-01-2020,SHARE NAME,CODE123,FX Credit,1.1004,USD,72.15,USD,0.00,c6aead59-29c2-40f4-8158-b92cc9b6867e
-28-01-2020,15:30,28-01-2020,SHARE NAME,CODE123,FX Debit,,EUR,-136.56,EUR,1187.59,00c31d47-e414-460c-
-,,,,,,,,,,,8905-9c33d4cc41a0
-28-01-2020,15:30,28-01-2020,SHARE NAME,CODE123,DEGIRO Transaction Fee,,EUR,-0.50,EUR,1324.15,00c31d47-e414-460c-8905-9c33d4cc41a
-    """
-
-        let expectedCleanRows = """10-09-2020,21:37,10-09-2020,SHARE NAME,CODE123,FX Debit,,EUR,-659995.30,EUR,663.86,df793c8a-2033-43c1-abd3-6d415682f99f
-26-06-2020,21:15,26-06-2020,SHARE NAME A,CODE123,Sell 5 ACME Inc@213 USD,,USD,1065.00,USD,1065.64,5092d5ff-ae52-4620-8bd1-d715b7897812
-26-06-2020,16:01,26-06-2020,SHARE NAME,CODE123,"Money Market fund conversion: Buy 0.000229 at 9,934.3851 EUR",,,,EUR,164.81,
-26-06-2020,09:24,25-06-2020,SHARE NAME 123,CODE123,Dividend,,USD,0.64,USD,0.64,
-30-01-2020,10:50,30-01-2020,SHARE NAME B,CODE123,Sell 10 ACME Inc 2@7.215 USD,,USD,72.15,USD,72.15,c6aead59-29c2-40f4-8158-b92cc9b6867e
-30-01-2020,09:06,30-01-2020,SHARE NAME,CODE123,FX Credit,1.1004,USD,72.15,USD,0.00,c6aead59-29c2-40f4-8158-b92cc9b6867e
-28-01-2020,15:30,28-01-2020,SHARE NAME,CODE123,FX Debit,,EUR,-136.56,EUR,1187.59,00c31d47-e414-460c-8905-9c33d4cc41a0
-28-01-2020,15:30,28-01-2020,SHARE NAME,CODE123,DEGIRO Transaction Fee,,EUR,-0.50,EUR,1324.15,00c31d47-e414-460c-8905-9c33d4cc41a"""
-        let cleanRows, isMalformed = cleanCsv malformedRows
-        isMalformed |> should be True
-        cleanRows |> should equal expectedCleanRows
-
-
-    [<Test>]
-    let ``Parse row without price value`` () =
-        let testRows =
-            header
-            + """
-11-09-2020,15:56,11-09-2020,ACME Inc,CODE123,"Money Market fund conversion: Sell 0.009917 at 9,923.3034 EUR",,,,EUR,663.86,
-"""
-
-        let rows = AccountCsv.Parse(testRows).Rows
-        Seq.length rows |> should equal 1
-
-[<EntryPoint>]
-let main _ = 0
