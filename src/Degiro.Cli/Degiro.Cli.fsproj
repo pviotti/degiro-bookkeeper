@@ -12,4 +12,8 @@
     <ItemGroup>
         <ProjectReference Include="..\Degiro.Account\Degiro.Account.fsproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Argu" Version="6.1.1" />
+    </ItemGroup>
 </Project>
