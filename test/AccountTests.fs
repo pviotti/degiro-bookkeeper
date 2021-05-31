@@ -125,3 +125,24 @@ module AccountTests =
 
         txns |> should haveLength 1
         txns.[0] |> should equal expectedTxn
+
+    [<Test>]
+    let ``Get total deposits`` () =
+            let testRows =
+                header
+                + """
+    30-01-2019,10:50,30-01-2019,,,Deposit,,EUR,1000.00,EUR,1025.87,
+    30-01-2020,10:50,30-01-2020,ACME Inc,CODE123,FX Debit,,EUR,65.57,EUR,307.98,c6aead59-29c2-40f4-8158-b92cc9b6867e
+    30-01-2020,10:50,30-01-2020,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,2.00,EUR,242.41,c6aead59-29c2-40f4-8158-b92cc9b6867e
+    30-06-2020,10:50,30-06-2020,,,flatex Deposit,,EUR,500.00,EUR,1051.56,
+    30-07-2020,10:50,30-07-2020,ACME Inc,CODE123,Sell 10 ACME Inc@7.215 USD,,USD,72.15,USD,72.15,c6aead59-29c2-40f4-8158-b92cc9b6867e
+    30-08-2020,09:06,30-08-2020,ACME Inc,CODE123,FX Credit,1.1004,USD,72.15,USD,0.00,c6aead59-29c2-40f4-8158-b92cc9b6867e
+    30-12-2021,09:06,30-12-2021,,,Deposit,,EUR,700.00,EUR,1025.87,
+    31-12-2021,09:06,31-12-2021,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-2.00,EUR,305.96,c6aead59-29c2-40f4-8158-b92cc9b6867e"""
+
+            let rows = AccountCsv.Parse(testRows).Rows
+            getTotalDeposits rows |> should equal 2200.0
+
+            getTotalYearDeposits rows 2019 |> should equal 1000.0
+            getTotalYearDeposits rows 2020 |> should equal 500.0
+            getTotalYearDeposits rows 2021 |> should equal 700.0
