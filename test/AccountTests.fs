@@ -128,9 +128,9 @@ module AccountTests =
 
     [<Test>]
     let ``Get total deposits`` () =
-            let testRows =
-                header
-                + """
+        let testRows =
+            header
+            + """
     30-01-2019,10:50,30-01-2019,,,Deposit,,EUR,1000.00,EUR,1025.87,
     30-01-2020,10:50,30-01-2020,ACME Inc,CODE123,FX Debit,,EUR,65.57,EUR,307.98,c6aead59-29c2-40f4-8158-b92cc9b6867e
     30-01-2020,10:50,30-01-2020,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,2.00,EUR,242.41,c6aead59-29c2-40f4-8158-b92cc9b6867e
@@ -140,9 +140,39 @@ module AccountTests =
     30-12-2021,09:06,30-12-2021,,,Deposit,,EUR,700.00,EUR,1025.87,
     31-12-2021,09:06,31-12-2021,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-2.00,EUR,305.96,c6aead59-29c2-40f4-8158-b92cc9b6867e"""
 
-            let rows = AccountCsv.Parse(testRows).Rows
-            getTotalDeposits rows |> should equal 2200.0
+        let rows = AccountCsv.Parse(testRows).Rows
+        getTotalDeposits rows |> should equal 2200.0
 
-            getTotalYearDeposits rows 2019 |> should equal 1000.0
-            getTotalYearDeposits rows 2020 |> should equal 500.0
-            getTotalYearDeposits rows 2021 |> should equal 700.0
+        getTotalYearDeposits rows 2019
+        |> should equal 1000.0
+
+        getTotalYearDeposits rows 2020
+        |> should equal 500.0
+
+        getTotalYearDeposits rows 2021
+        |> should equal 700.0
+
+    [<Test>]
+    let ``Get total fees for a year`` () =
+        let testRows =
+            header
+            + """
+01-11-2018,09:35,31-10-2018,,,DEGIRO Exchange Connection Fee 2018 (Euronext Amsterdam - EAM),,EUR,-2.50,EUR,317.04,
+01-10-2019,10:50,30-09-2019,,,DEGIRO Exchange Connection Fee 2019 (Euronext Paris - EPA),,EUR,-2.50,EUR,705.69,
+01-10-2019,10:50,30-09-2019,,,DEGIRO Exchange Connection Fee 2019 (Borsa Italiana S.p.A. - MIL),,EUR,-2.50,EUR,708.19,
+30-07-2019,10:50,30-07-2019,ACME Inc,CODE123,Sell 10 ACME Inc@7.215 USD,,USD,72.15,USD,72.15,c6aead59-29c2-40f4-8158-b92cc9b6867e
+30-08-2019,09:06,30-08-2019,ACME Inc,CODE123,FX Credit,1.1004,USD,72.15,USD,0.00,c6aead59-29c2-40f4-8158-b92cc9b6867e
+23-09-2019,15:31,23-09-2019,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-0.50,EUR,1061.36,838de62f-2b72-428a-8c80-590ec5a7e94d
+23-09-2019,15:31,23-09-2019,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-0.01,EUR,109961.86,838de62f-2b72-428a-8c80-590ec5a7e94d
+03-09-2019,15:32,03-09-2019,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-0.50,EUR,12448.30,924288dd-057a-431b-86ea-af3a54ead0ca
+03-09-2019,15:32,03-09-2019,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-0.01,EUR,12468.80,924288dd-057a-431b-86ea-af3a54ead0ca
+03-09-2019,15:31,03-09-2019,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-0.50,EUR,1863.68,7d6141bb-e349-453f-b30d-560bffcde3e2
+03-09-2019,15:31,03-09-2019,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-0.01,EUR,18694.18,7d6141bb-e349-453f-b30d-560bffcde3e2
+03-09-2020,15:30,03-09-2020,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-0.50,EUR,22498.35,dd33e62e-f313-45b4-8ed6-3b8a0849dd44
+03-09-2020,15:30,03-09-2020,ACME Inc,CODE123,DEGIRO Transaction Fee,,EUR,-0.01,EUR,2248.85,dd33e62e-f313-45b4-8ed6-3b8a0849dd44
+"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        getTotalYearFees rows 2018 |> should equal -2.5
+        getTotalYearFees rows 2019 |> should equal -6.53
+        getTotalYearFees rows 2020 |> should equal -0.51
