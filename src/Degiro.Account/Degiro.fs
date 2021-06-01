@@ -19,7 +19,9 @@ module Account =
         31-12-2020,01:31,31-12-2020,,,Flatex Interest,,EUR,-0.79,EUR,470.07,"""
 
     // Culture is set to parse dates in the dd-mm-YYY format as `Option<DateTime>` type
-    type AccountCsv = CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (decimal?),,,OrderId", Culture="en-IRL">
+    type AccountCsv =
+        CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (decimal?),,,OrderId", Culture="en-IRL">
+
     type Row = AccountCsv.Row
 
     /// Get all rows corresponding to some order, grouped by their OrderId
@@ -161,19 +163,14 @@ module Account =
     /// Get all sell transactions for the given year and Irish tax period
     let getSellTxnsInPeriod (txns: list<Txn>) (year: int) (period: Period) =
         txns
-        |> List.sortByDescending (fun x -> x.Date)
+        |> List.filter (fun x -> x.Type = Sell)
         |> List.filter
             (fun x ->
                 match period with
-                | Period.Initial ->
-                    x.Date.Month < 12
-                    && x.Date.Year = year
-                    && x.Type = Sell
-                | Period.Later ->
-                    x.Date.Month = 12
-                    && x.Date.Year = year
-                    && x.Type = Sell
-                | _ -> x.Date.Year = year && x.Type = Sell)
+                | Period.Initial -> x.Date.Month < 12 && x.Date.Year = year
+                | Period.Later -> x.Date.Month = 12 && x.Date.Year = year
+                | _ -> x.Date.Year = year)
+        |> List.sortByDescending (fun x -> x.Date)
 
 
     /// For a given Sell transaction, compute its earning by
@@ -195,7 +192,7 @@ module Account =
             elif List.isEmpty buys && quantityToSell <> 0 then // Should not happen
                 failwithf $"Error: can't find buy txns for remaining {quantityToSell} sells of %A{sellTxn}"
             else
-                let currBuy = Seq.head buys
+                let currBuy = List.head buys
 
                 let quantityRemaining, newTotalBuyPrice =
                     if currBuy.Quantity <= quantityToSell then
