@@ -267,14 +267,12 @@ module Account =
             |> Array.iter
                 (fun row ->
                     let strToAppend =
-                        if not (row.[0..2].Equals ",,,") then
-                            row
+                        if row.[0..2].Equals ",,," then
+                            (Array.last (row.Split(","))).TrimEnd()
                         else
-                            sb.Remove(sb.Length - 1, 1) |> ignore
-                            Array.last (row.Split(","))
+                            Environment.NewLine + row.TrimEnd()
 
-                    sb.Append strToAppend |> ignore
-                    sb.AppendLine() |> ignore)
+                    sb.Append(strToAppend) |> ignore)
 
             sb.ToString().Trim(), isMalformed
         else
