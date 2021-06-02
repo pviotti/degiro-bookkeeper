@@ -3,13 +3,20 @@ name: .NET
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - '**.md'
+    tags:
+      - 'v*'
   pull_request:
     branches: [ master ]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    name: Build and test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
