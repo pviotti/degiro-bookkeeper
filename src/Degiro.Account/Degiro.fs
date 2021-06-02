@@ -20,7 +20,7 @@ module Account =
 
     // Culture is set to parse dates in the dd-mm-YYY format as `Option<DateTime>` type
     type AccountCsv =
-        CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (decimal?),,,OrderId", Culture="en-IRL">
+        CsvProvider<accountStatementSampleCsv, Schema=",,,,,,,,Price (decimal?),,,OrderId", Culture="en-IE">
 
     type Row = AccountCsv.Row
 
