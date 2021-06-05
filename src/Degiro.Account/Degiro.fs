@@ -51,17 +51,8 @@ module Account =
                 let matches =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
-                let txnType =
-                    match matches.Groups.[1].Value with
-                    | "Sell" -> Sell
-                    | "Buy" -> Buy
-                    | _ -> failwith $"Error: unsupported transaction type for %A{row}"
-
-                let valueCurrency =
-                    match matches.Groups.[4].Value with
-                    | "EUR" -> EUR
-                    | "USD" -> USD
-                    | _ -> failwith $"Error: unsupported currency for %A{row}"
+                let txnType = TxnType.FromString matches.Groups.[1].Value
+                let valueCurrency = Currency.FromString matches.Groups.[4].Value
 
                 txnType, valueCurrency
 
@@ -277,3 +268,54 @@ module Account =
             sb.ToString().Trim(), isMalformed
         else
             csvContent, isMalformed
+
+    /// Return a list of Dividend objects for a given year
+    /// sorted in decreasing order by total dividend value.
+    /// Note: they can be in different currencies, so sorting is not accurate.
+    let getAllDividends (rows: seq<Row>) (year: int) =
+        let rowsDividendsInYear =
+            rows
+            |> Seq.filter
+                (fun x ->
+                    x.Date.Year = year
+                    && (x.Description.Equals "Dividend"
+                        || x.Description.Equals "Dividend Tax"))
+            |> Seq.toList
+
+        let productsWithDividendsInYear =
+            rowsDividendsInYear
+            |> List.map (fun x -> x.Product)
+            |> List.distinct
+
+        let getAllDividendsForProductInYear (rowsDividends: Row list) (product: string) =
+            let totDividends =
+                rowsDividends
+                |> List.filter
+                    (fun x ->
+                        x.Description.Equals "Dividend"
+                        && x.Product = product)
+                |> List.sumBy (fun x -> x.Price.Value)
+
+            let totTaxDividends =
+                rowsDividends
+                |> List.filter
+                    (fun x ->
+                        x.Description.Equals "Dividend Tax"
+                        && x.Product = product)
+                |> List.sumBy (fun x -> x.Price.Value)
+
+            let currency =
+                Currency.FromString
+                    (rowsDividends
+                     |> List.find (fun x -> x.Product = product))
+                        .Change
+
+            { Year = year
+              Product = product
+              Value = totDividends
+              ValueTax = totTaxDividends
+              Currency = currency }
+
+        productsWithDividendsInYear
+        |> List.map (getAllDividendsForProductInYear rowsDividendsInYear)
+        |> List.sortByDescending (fun x -> x.Value)

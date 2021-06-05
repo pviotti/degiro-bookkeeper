@@ -240,3 +240,27 @@ module AccountTests =
 
         getSellsEarnings [ txnSellA1 ] allTxns
         |> should equal [ expectedEarning ]
+
+    [<Test>]
+    let ``Get dividends`` () =
+        let testRows =
+            header
+            + """
+        01-09-2019,09:13,01-09-2019,ACME Inc,CODE123,Dividend,,USD,10.50,USD,8.92,
+        01-04-2020,09:13,01-04-2020,ACME Inc,CODE123,Dividend,,USD,10.50,USD,8.92,
+        30-06-2020,10:50,30-06-2020,,,flatex Deposit,,EUR,500.00,EUR,1051.56,
+        30-07-2020,10:50,30-07-2020,ACME Inc,CODE123,Sell 10 ACME Inc@7.215 USD,,USD,72.15,USD,72.15,c6aead59-29c2-40f4-8158-b92cc9b6867e
+        01-04-2020,09:13,31-03-2020,ACME Inc,CODE123,Dividend Tax,,USD,-1.58,USD,-1.58,"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+
+        let expectedDividend =
+            { Year = 2020
+              Product = "ACME Inc"
+              Value = 10.5m
+              ValueTax = -1.58m
+              Currency = USD }
+
+        let allDividends = getAllDividends rows 2020
+        allDividends |> should haveLength 1
+        allDividends.[0] |> should equal expectedDividend
