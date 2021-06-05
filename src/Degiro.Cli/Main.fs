@@ -33,12 +33,22 @@ type CliArguments =
 let printVersion () = printfn $"{PROGRAM_NAME} v{VERSION}"
 
 let printEarnings earnings =
-    printfn "%-10s %-40s %7s %8s\n%s" "Date" "Product" "P/L (€)" "P/L %" (String.replicate 68 "-")
+    printfn $"""%-10s{"Date"} %-40s{"Product"} %7s{"P/L (€)"} %8s{"P/L %"}"""
+    printfn $"""%s{String.replicate 68 "-"}"""
 
     let printEarning (e: Earning) =
         printfn "%s %-40s %7.2f %7.1f%%" (e.Date.ToString("yyyy-MM-dd")) e.Product e.Value e.Percent
 
     earnings |> List.iter printEarning
+
+let printDividends dividends =
+    printfn $"""%-40s{"Product"} %7s{"Tax"} %7s{"Value"} %8s{"Currency"}"""
+    printfn $"""%s{String.replicate 65 "-"}"""
+
+    let printDividend (d: Dividend) =
+        printfn $"%-40s{d.Product} %7.2f{d.ValueTax} %7.2f{d.Value} %8A{d.Currency}"
+
+    dividends |> List.iter printDividend
 
 [<EntryPoint>]
 let main argv =
@@ -64,11 +74,15 @@ let main argv =
         else
             Period.All
 
+    // CSV cleaning
     let originalCsvContent = File.ReadAllText csvFilePath
     let cleanCsv, isMalformed = cleanCsv originalCsvContent
 
     if isMalformed then
-        let newFilePath = csvFilePath.[..csvFilePath.Length - 5] + "-clean.csv"
+        let newFilePath =
+            csvFilePath.[..csvFilePath.Length - 5]
+            + "-clean.csv"
+
         File.WriteAllText(newFilePath, cleanCsv)
         printfn $"Cleaned csv file has been written to {newFilePath}.\n"
 
@@ -86,10 +100,12 @@ let main argv =
 
     let sellsInPeriod = getSellTxnsInPeriod txns year period
 
+    // Earnings
     if List.isEmpty sellsInPeriod then
         printfn $"No sells recorded in %d{year}, period: %A{period}."
     else
         let periodEarnings = getSellsEarnings sellsInPeriod txns
+        printfn $"Earnings in {year}, period %A{period}:\n"
         printEarnings periodEarnings
 
         let periodTotalEarnings =
@@ -104,13 +120,29 @@ let main argv =
 Tot. P/L (€): %.2f{periodTotalEarnings}
 Avg %% P/L: %.2f{periodAvgPercEarnings}%%"""
 
+    // Dividends
+    let dividends = getAllDividends rows year
+    printfn $"\nDividends in {year}:\n"
+    printDividends dividends
+
+    let getTotalNetDividends dividends currency =
+        dividends
+        |> List.filter (fun x -> x.Currency = currency)
+        |> List.sumBy (fun x -> x.Value + x.ValueTax)
+
+    printfn
+        $"""
+Tot. net dividends in €: {getTotalNetDividends dividends EUR}
+Tot. net dividends in $: {getTotalNetDividends dividends USD}"""
+
+    // Total deposits and fees
     let yearTotFees = getTotalYearFees rows year
     let totDeposits = getTotalDeposits rows
     let totYearDeposits = getTotalYearDeposits rows year
 
     printfn
         $"""
-Tot. DeGiro fees in %d{year} (€): %.2f{yearTotFees}
+Tot. Degiro fees in %d{year} (€): %.2f{yearTotFees}
 Tot. deposits in %d{year} (€): %.2f{totYearDeposits}
 Tot. deposits (€): %.2f{totDeposits}"""
 
