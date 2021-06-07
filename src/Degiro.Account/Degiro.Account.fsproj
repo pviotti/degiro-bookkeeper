@@ -8,7 +8,8 @@
   <ItemGroup>
     <!-- <Compile Include="Finnhub.fs" /> -->
     <Compile Include="Model.fs" />    
-    <Compile Include="Degiro.fs" />
+    <Compile Include="Degiro.fs" />    
+    <Compile Include="Output.fs" />
   </ItemGroup>
 
   <ItemGroup>
