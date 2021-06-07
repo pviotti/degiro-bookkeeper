@@ -6,6 +6,8 @@ open Argu
 
 open Degiro
 open Degiro.Account
+open Degiro.CliOutput
+open Degiro.CsvOutput
 
 let VERSION =
     Assembly
@@ -17,38 +19,23 @@ let PROGRAM_NAME = "degiro"
 
 type CliArguments =
     | [<NoAppSettings>] Version
-    | [<Mandatory; MainCommand>] CsvFilePath of file: string
+    | [<Mandatory; MainCommand>] CsvFilePath of input: string
     | [<AltCommandLine("-y")>] Year of year: int
     | [<AltCommandLine("-p")>] Period of period: int
+    | [<AltCommandLine("-o")>] OutputPath of output_path: string
 
     interface IArgParserTemplate with
         member s.Usage =
             match s with
             | Version _ -> $"print {PROGRAM_NAME} version"
-            | CsvFilePath _ -> "path of Degiro account csv file"
+            | CsvFilePath _ -> "path of Degiro account CSV file"
             | Year _ -> "year"
-            | Period _ -> "Irish tax period (1: Jan-Nov; 2: Dec)"
+            | Period _ -> "Irish CGT tax period (1: Jan-Nov; 2: Dec)"
+            | OutputPath _ -> "output path for earnings and dividends CSVs"
 
 
 let printVersion () = printfn $"{PROGRAM_NAME} v{VERSION}"
 
-let printEarnings earnings =
-    printfn $"""%-10s{"Date"} %-40s{"Product"} %7s{"P/L (€)"} %8s{"P/L %"}"""
-    printfn $"""%s{String.replicate 68 "-"}"""
-
-    let printEarning (e: Earning) =
-        printfn "%s %-40s %7.2f %7.1f%%" (e.Date.ToString("yyyy-MM-dd")) e.Product e.Value e.Percent
-
-    earnings |> List.iter printEarning
-
-let printDividends dividends =
-    printfn $"""%-40s{"Product"} %7s{"Tax"} %7s{"Value"} %8s{"Currency"}"""
-    printfn $"""%s{String.replicate 65 "-"}"""
-
-    let printDividend (d: Dividend) =
-        printfn $"%-40s{d.Product} %7.2f{d.ValueTax} %7.2f{d.Value} %8A{d.Currency}"
-
-    dividends |> List.iter printDividend
 
 [<EntryPoint>]
 let main argv =
@@ -74,6 +61,12 @@ let main argv =
         else
             Period.All
 
+    let outputPath =
+        if args.Contains OutputPath then
+            Some(args.GetResult OutputPath)
+        else
+            None
+
     // CSV cleaning
     let originalCsvContent = File.ReadAllText csvFilePath
     let cleanCsv, isMalformed = cleanCsv originalCsvContent
@@ -84,7 +77,7 @@ let main argv =
             + "-clean.csv"
 
         File.WriteAllText(newFilePath, cleanCsv)
-        printfn $"Cleaned csv file has been written to {newFilePath}.\n"
+        printfn $"Cleaned CSV file has been written to {newFilePath}.\n"
 
     let rows = AccountCsv.Parse(cleanCsv).Rows
 
@@ -106,34 +99,30 @@ let main argv =
     else
         let periodEarnings = getSellsEarnings sellsInPeriod txns
         printfn $"Earnings in {year}, period %A{period}:\n"
-        printEarnings periodEarnings
+        printfn $"%s{getEarningsCliString periodEarnings}"
 
-        let periodTotalEarnings =
-            periodEarnings |> List.sumBy (fun x -> x.Value)
+        if outputPath.IsSome then
+            let csvEarnings = earningsToCsvString periodEarnings
 
-        let periodAvgPercEarnings =
-            periodEarnings
-            |> List.averageBy (fun x -> x.Percent)
+            let outputFilePath =
+                Path.Combine(outputPath.Value, $"{year}-{period}-degiro-earnings.csv")
 
-        printfn
-            $"""
-Tot. P/L (€): %.2f{periodTotalEarnings}
-Avg %% P/L: %.2f{periodAvgPercEarnings}%%"""
+            File.WriteAllText(outputFilePath, csvEarnings)
+            printfn $"Earning CSV file written to {outputFilePath}\n"
 
     // Dividends
     let dividends = getAllDividends rows year
     printfn $"\nDividends in {year}:\n"
-    printDividends dividends
+    printfn $"%s{getDividendsCliString dividends}"
 
-    let getTotalNetDividends dividends currency =
-        dividends
-        |> List.filter (fun x -> x.Currency = currency)
-        |> List.sumBy (fun x -> x.Value + x.ValueTax)
+    if outputPath.IsSome then
+        let csvDividends = dividendsToCsvString dividends
 
-    printfn
-        $"""
-Tot. net dividends in €: {getTotalNetDividends dividends EUR}
-Tot. net dividends in $: {getTotalNetDividends dividends USD}"""
+        let outputFilePath =
+            Path.Combine(outputPath.Value, $"{year}-degiro-dividends.csv")
+
+        File.WriteAllText(outputFilePath, csvDividends)
+        printfn $"Dividends CSV file written to {outputFilePath}\n"
 
     // Total deposits and fees
     let yearTotFees = getTotalYearFees rows year
