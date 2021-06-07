@@ -21,6 +21,7 @@
     <ItemGroup>
         <Compile Include="AccountTests.fs" />
         <Compile Include="CsvParsingTests.fs" />
+        <Compile Include="OutputTest.fs" />
     </ItemGroup>
 
     <ItemGroup>
