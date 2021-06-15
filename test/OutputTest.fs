@@ -124,3 +124,6 @@ module OutputTests =
 
         outStr |> should contain expectedStr1
         outStr |> should contain expectedStr2
+
+    [<EntryPoint>]
+    let main _ = 0
