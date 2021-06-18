@@ -39,103 +39,111 @@ let printVersion () = printfn $"{PROGRAM_NAME} v{VERSION}"
 
 [<EntryPoint>]
 let main argv =
-    let parser =
-        ArgumentParser.Create<CliArguments>(
-            programName = PROGRAM_NAME,
-            errorHandler = ProcessExiter(),
-            checkStructure = false
-        )
+    try
+        let parser =
+            ArgumentParser.Create<CliArguments>(
+                programName = PROGRAM_NAME,
+                errorHandler = ProcessExiter(),
+                checkStructure = false
+            )
 
-    let args = parser.ParseCommandLine(argv)
+        let args = parser.ParseCommandLine(argv)
 
-    if args.Contains Version then
-        printVersion ()
-        Environment.Exit 0
+        if args.Contains Version then
+            printVersion ()
+            Environment.Exit 0
 
-    let csvFilePath = args.GetResult CsvFilePath
-    let year = args.GetResult Year
+        let csvFilePath = args.GetResult CsvFilePath
+        let year = args.GetResult Year
 
-    let period =
-        if args.Contains Period then
-            enum<Period> (args.GetResult Period)
-        else
-            Period.All
+        let period =
+            if args.Contains Period then
+                match args.GetResult Period with
+                | 1 -> Period.Initial
+                | 2 -> Period.Later
+                | _ -> failwith "Irish CGT tax period not supported (1: Jan-Nov; 2: Dec)"
+            else
+                Period.All
 
-    let outputPath =
-        if args.Contains OutputPath then
-            Some(args.GetResult OutputPath)
-        else
-            None
+        let outputPath =
+            if args.Contains OutputPath then
+                Some(args.GetResult OutputPath)
+            else
+                None
 
-    // CSV cleaning
-    let originalCsvContent = File.ReadAllText csvFilePath
-    let cleanCsv, isMalformed = cleanCsv originalCsvContent
+        // CSV cleaning
+        let originalCsvContent = File.ReadAllText csvFilePath
+        let cleanCsv, isMalformed = cleanCsv originalCsvContent
 
-    if isMalformed then
-        let newFilePath =
-            csvFilePath.[..csvFilePath.Length - 5]
-            + "-clean.csv"
+        if isMalformed then
+            let newFilePath =
+                csvFilePath.[..csvFilePath.Length - 5]
+                + "-clean.csv"
 
-        File.WriteAllText(newFilePath, cleanCsv)
-        printfn $"Cleaned CSV file has been written to {newFilePath}.\n"
+            File.WriteAllText(newFilePath, cleanCsv)
+            printfn $"Cleaned CSV file has been written to {newFilePath}.\n"
 
-    let rows = AccountCsv.Parse(cleanCsv).Rows
+        let rows = AccountCsv.Parse(cleanCsv).Rows
 
 #if DEBUG
-    let timer = Diagnostics.Stopwatch()
-    timer.Start()
+        let timer = Diagnostics.Stopwatch()
+        timer.Start()
 #endif
 
-    let txnsGrouped = getRowsGroupedByOrderId rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
 
-    let txns =
-        Seq.map buildTxn txnsGrouped |> Seq.toList
+        let txns =
+            Seq.map buildTxn txnsGrouped |> Seq.toList
 
-    let sellsInPeriod = getSellTxnsInPeriod txns year period
+        let sellsInPeriod = getSellTxnsInPeriod txns year period
 
-    // Earnings
-    if List.isEmpty sellsInPeriod then
-        printfn $"No sells recorded in %d{year}, period: %A{period}."
-    else
-        let periodEarnings = getSellsEarnings sellsInPeriod txns
-        printfn $"Earnings in {year}, period %A{period}:\n"
-        printfn $"%s{getEarningsCliString periodEarnings}"
+        // Earnings
+        if List.isEmpty sellsInPeriod then
+            printfn $"No sells recorded in %d{year}, period: %A{period}."
+        else
+            let periodEarnings = getSellsEarnings sellsInPeriod txns
+            printfn $"Earnings in {year}, period %A{period}:\n"
+            printfn $"%s{getEarningsCliString periodEarnings}"
+
+            if outputPath.IsSome then
+                let csvEarnings = earningsToCsvString periodEarnings
+
+                let outputFilePath =
+                    Path.Combine(outputPath.Value, $"{year}-{period}-degiro-earnings.csv")
+
+                File.WriteAllText(outputFilePath, csvEarnings)
+                printfn $"Earning CSV file written to {outputFilePath}\n"
+
+        // Dividends
+        let dividends = getAllDividends rows year
+        printfn $"\nDividends in {year}:\n"
+        printfn $"%s{getDividendsCliString dividends}"
 
         if outputPath.IsSome then
-            let csvEarnings = earningsToCsvString periodEarnings
+            let csvDividends = dividendsToCsvString dividends
 
             let outputFilePath =
-                Path.Combine(outputPath.Value, $"{year}-{period}-degiro-earnings.csv")
+                Path.Combine(outputPath.Value, $"{year}-degiro-dividends.csv")
 
-            File.WriteAllText(outputFilePath, csvEarnings)
-            printfn $"Earning CSV file written to {outputFilePath}\n"
+            File.WriteAllText(outputFilePath, csvDividends)
+            printfn $"Dividends CSV file written to {outputFilePath}\n"
 
-    // Dividends
-    let dividends = getAllDividends rows year
-    printfn $"\nDividends in {year}:\n"
-    printfn $"%s{getDividendsCliString dividends}"
+        // Total deposits and fees
+        let yearTotFees = getTotalYearFees rows year
+        let totDeposits = getTotalDeposits rows
+        let totYearDeposits = getTotalYearDeposits rows year
 
-    if outputPath.IsSome then
-        let csvDividends = dividendsToCsvString dividends
-
-        let outputFilePath =
-            Path.Combine(outputPath.Value, $"{year}-degiro-dividends.csv")
-
-        File.WriteAllText(outputFilePath, csvDividends)
-        printfn $"Dividends CSV file written to {outputFilePath}\n"
-
-    // Total deposits and fees
-    let yearTotFees = getTotalYearFees rows year
-    let totDeposits = getTotalDeposits rows
-    let totYearDeposits = getTotalYearDeposits rows year
-
-    printfn
-        $"""
+        printfn
+            $"""
 Tot. Degiro fees in %d{year} (€): %.2f{yearTotFees}
 Tot. deposits in %d{year} (€): %.2f{totYearDeposits}
 Tot. deposits (€): %.2f{totDeposits}"""
 
 #if DEBUG
-    printfn $"\nElapsed time: {timer.ElapsedMilliseconds} ms"
+        printfn $"\nElapsed time: {timer.ElapsedMilliseconds} ms"
 #endif
+    with ex ->
+        eprintfn $"Error: %s{ex.Message}"
+        Environment.Exit 1
+
     0
