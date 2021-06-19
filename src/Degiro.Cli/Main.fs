@@ -109,7 +109,7 @@ let main argv =
                 let csvEarnings = earningsToCsvString periodEarnings
 
                 let outputFilePath =
-                    Path.Combine(outputPath.Value, $"{year}-{period}-degiro-earnings.csv")
+                    Path.Combine(outputPath.Value, $"{year}-{period.ToString().ToLower()}-degiro-earnings.csv")
 
                 File.WriteAllText(outputFilePath, csvEarnings)
                 printfn $"Earning CSV file written to {outputFilePath}\n"
