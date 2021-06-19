@@ -235,8 +235,9 @@ module AccountTests =
         let expectedEarning =
             { Date = txnSellA1.Date
               Product = txnSellA1.Product
+              ProductId = "ABC"
               Value = 105.0m
-              Percent = (105.0m / 95.0m) * 100.0m }
+              Percent = Math.Round((105.0m / 95.0m) * 100.0m, 2) }
 
         getSellsEarnings [ txnSellA1 ] allTxns
         |> should equal [ expectedEarning ]
@@ -257,6 +258,7 @@ module AccountTests =
         let expectedDividend =
             { Year = 2020
               Product = "ACME Inc"
+              ProductId = "CODE123"
               Value = 10.5m
               ValueTax = -1.58m
               Currency = USD }
