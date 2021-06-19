@@ -17,18 +17,20 @@ module OutputTests =
         let earningOne =
             { Date = DateTime(2021, 1, 2)
               Product = "ACME Inc A"
+              ProductId = "ABC1"
               Value = 123.0m
               Percent = 20.0m }
 
         let earningTwo =
             { earningOne with
                   Product = "ACME Inc B"
+                  ProductId = "ABC2"
                   Value = 500.0m
                   Percent = 10.0m }
 
-        let expectedStr = """Date,Product,Value,Percent
-2021-01-02,ACME Inc A,123.0,20.0
-2021-01-02,ACME Inc B,500.0,10.0
+        let expectedStr = """Date,Product,ProductId,Value,Percent
+2021-01-02,ACME Inc A,ABC1,123.0,20.0
+2021-01-02,ACME Inc B,ABC2,500.0,10.0
 """
 
         earningsToCsvString [ earningOne
@@ -38,7 +40,10 @@ module OutputTests =
     [<TestCase>]
     let ``Empty earnings list to CSV string`` () =
         earningsToCsvString List.empty
-        |> should equal ("Date,Product,Value,Percent" + Environment.NewLine)
+        |> should
+            equal
+            ("Date,Product,ProductId,Value,Percent"
+             + Environment.NewLine)
 
 
     [<TestCase>]
@@ -46,6 +51,7 @@ module OutputTests =
         let dividendOne =
             { Year = 2021
               Product = "ACME Inc A"
+              ProductId = "ABC1"
               Value = 42.0m
               ValueTax = 0.50m
               Currency = USD }
@@ -53,13 +59,14 @@ module OutputTests =
         let dividendTwo =
             { dividendOne with
                   Product = "ACME Inc B"
+                  ProductId = "ABC2"
                   Value = 142.0m
                   ValueTax = 0.52m
                   Currency = EUR }
 
-        let expectedStr = """Year,Product,Value,Value Tax,Currency
-2021,ACME Inc A,42.0,0.50,USD
-2021,ACME Inc B,142.0,0.52,EUR
+        let expectedStr = """Product,ProductId,Value,Value Tax,Currency
+ACME Inc A,ABC1,42.0,0.50,USD
+ACME Inc B,ABC2,142.0,0.52,EUR
 """
 
         dividendsToCsvString [ dividendOne
@@ -72,7 +79,7 @@ module OutputTests =
         dividendsToCsvString List.Empty
         |> should
             equal
-            ("Year,Product,Value,Value Tax,Currency"
+            ("Product,ProductId,Value,Value Tax,Currency"
              + Environment.NewLine)
 
     [<TestCase>]
@@ -80,12 +87,14 @@ module OutputTests =
         let earningOne =
             { Date = DateTime(2021, 1, 2)
               Product = "ACME Inc A"
+              ProductId = "ABC1"
               Value = 100.0m
               Percent = 20m }
 
         let earningTwo =
             { Date = DateTime(2021, 2, 2)
               Product = "ACME Inc B"
+              ProductId = "ABC2"
               Value = 50.0m
               Percent = 10m }
 
@@ -104,6 +113,7 @@ module OutputTests =
         let dividendOne =
             { Year = 2021
               Product = "ACME Inc A"
+              ProductId = "ABC1"
               Value = 2.0m
               ValueTax = -0.50m
               Currency = EUR }
@@ -111,6 +121,7 @@ module OutputTests =
         let dividendTwo =
             { Year = 2021
               Product = "ACME Inc B"
+              ProductId = "ABC2"
               Value = 5.0m
               ValueTax = -0.50m
               Currency = USD }

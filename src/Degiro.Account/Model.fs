@@ -10,7 +10,8 @@ module Utils =
 
     // Create discriminated unions from string - http://fssnip.net/9l
     let fromString<'a> (s: string) =
-        match FSharpType.GetUnionCases typeof<'a> |> Array.filter (fun case -> case.Name = s) with
+        match FSharpType.GetUnionCases typeof<'a>
+              |> Array.filter (fun case -> case.Name = s) with
         | [| case |] -> FSharpValue.MakeUnion(case, [||]) :?> 'a
         | _ -> failwith (s + " not recognized as a valid parameter.")
 
@@ -46,12 +47,14 @@ type Txn =
 type Earning =
     { Date: DateTime
       Product: string
+      ProductId: string
       Value: decimal
       Percent: decimal }
 
 type Dividend =
     { Year: int
       Product: string
+      ProductId: string
       Value: decimal
       ValueTax: decimal
       Currency: Currency }
