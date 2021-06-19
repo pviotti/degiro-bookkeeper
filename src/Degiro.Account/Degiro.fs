@@ -200,7 +200,7 @@ module Account =
             getTotBuyPrice buysPrecedingSell sellTxn.Quantity 0.0m
 
         let earning = sellTxn.Price + totBuyPrice
-        earning, earning / (-totBuyPrice) * 100.0m
+        earning, Math.Round(earning / (-totBuyPrice) * 100.0m, 2)
 
     /// Return the Earning objects for a given sequence of sells
     let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) : list<Earning> =
