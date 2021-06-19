@@ -51,8 +51,11 @@ module Account =
                 let matches =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
-                let txnType = TxnType.FromString matches.Groups.[1].Value
-                let valueCurrency = Currency.FromString matches.Groups.[4].Value
+                let txnType =
+                    TxnType.FromString matches.Groups.[1].Value
+
+                let valueCurrency =
+                    Currency.FromString matches.Groups.[4].Value
 
                 txnType, valueCurrency
 
@@ -211,6 +214,7 @@ module Account =
 
                 { Date = sell.Date
                   Product = sell.Product
+                  ProductId = sell.ProductId
                   Value = earning
                   Percent = earningPercentage })
 
@@ -310,8 +314,14 @@ module Account =
                      |> List.find (fun x -> x.Product = product))
                         .Change
 
+            let productId =
+                (rowsDividends
+                 |> List.find (fun x -> x.Product = product))
+                    .ISIN
+
             { Year = year
               Product = product
+              ProductId = productId
               Value = totDividends
               ValueTax = totTaxDividends
               Currency = currency }
