@@ -37,5 +37,17 @@ OPTIONS:
     --help                display this list of options.
 ```
 
+## Features
+
+ - computes earnings (or losses) in € using exact exchange rate as per account statement
+   in case of transactions in non-€ currencies
+ - accounts for Degiro fees on transactions
+ - accounts for taxes on dividends automatically deducted by Degiro
+ - only outputs earnings in €. Transactions are supported in the following currencies: €, USD
+ - processes malformed input CSV (i.e. with garbled rows) and output cleaned up CSV
+   in the same folder as the input file (with `-clean.csv` suffix)
+ - computes dividends in € or USD in a given year
+ - supports Irish CGT tax periods (i.e. Initial and Later - see revenue.ie)
+
 
  [degiro]: https://www.degiro.ie/
