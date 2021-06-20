@@ -29,7 +29,7 @@ CSVFILEPATH:
 
 OPTIONS:
 
-    --version             print degiro version
+    --version             print dgbk version
     --year, -y <year>     year
     --period, -p <period> Irish CGT tax period (1: Jan-Nov; 2: Dec)
     --outputpath, -o <output path>
