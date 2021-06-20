@@ -19,7 +19,7 @@ let PROGRAM_NAME = AppDomain.CurrentDomain.FriendlyName
 
 type CliArguments =
     | [<NoAppSettings>] Version
-    | [<Mandatory; MainCommand>] CsvFilePath of input: string
+    | [<MainCommand>] CsvFilePath of input: string
     | [<AltCommandLine("-y")>] Year of year: int
     | [<AltCommandLine("-p")>] Period of period: int
     | [<AltCommandLine("-o")>] OutputPath of output_path: string
