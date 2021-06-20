@@ -15,7 +15,7 @@ let VERSION =
         .GetName()
         .Version.ToString()
 
-let PROGRAM_NAME = "degiro"
+let PROGRAM_NAME = AppDomain.CurrentDomain.FriendlyName
 
 type CliArguments =
     | [<NoAppSettings>] Version
