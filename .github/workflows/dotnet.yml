@@ -1,4 +1,4 @@
-name: .NET
+name: .NET CI
 
 on:
   push:
@@ -55,4 +55,55 @@ jobs:
         fail_ci_if_error: true
         path_to_write_report: ./coveragereport/codecov_report.txt
         verbose: true
+        
+  publish:
+    needs: build
+    strategy:
+      matrix:
+        config:
+            - {os: ubuntu-latest, rid: "linux-x64", id: "linux" }
+            - {os: windows-latest, rid: "win-x64", id: "win" }
+            - {os: macos-latest, rid: "osx-x64", id: "osx" }
+    name: Create draft release on ${{ matrix.config.os }}
+    runs-on: ${{ matrix.config.os }}
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Set version variable (Linux and MacOS)
+      if: matrix.config.id != 'win'
+      run: echo "VER=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+    - name: Set version variable (Windows)
+      if: matrix.config.id == 'win'
+      run: echo "VER=$(($env:GITHUB_REF -split '/')[-1] -replace ' ','')" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+      
+    - name: Build release artifacts
+      run: |
+        dotnet publish src/Degiro.Cli/Degiro.Cli.fsproj -c Release -o dgbk-${{ env.VER }}-${{ matrix.config.id }}
+        dotnet publish src/Degiro.Cli/Degiro.Cli.fsproj -c Release -r ${{ matrix.config.rid }} -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained true -o dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc
+
+    - name: Zip artifacts (Linux and MacOS)
+      if: matrix.config.id != 'win'
+      run: |
+        zip -r dgbk-${{ env.VER }}-${{ matrix.config.id }}.zip dgbk-${{ env.VER }}-${{ matrix.config.id }}
+        zip -r dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc.zip dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc
+        
+    - name: Zip artifacts (Windows)
+      if: matrix.config.id == 'win'
+      run: |
+        Compress-Archive -Path dgbk-${{ env.VER }}-${{ matrix.config.id }} -DestinationPath dgbk-${{ env.VER }}-${{ matrix.config.id }}.zip
+        Compress-Archive -Path dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc -DestinationPath dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc.zip
+
+    - name: Create draft release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: true
+        files: ./*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
