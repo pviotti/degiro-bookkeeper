@@ -28,10 +28,10 @@ type CliArguments =
         member s.Usage =
             match s with
             | Version _ -> $"print {PROGRAM_NAME} version"
-            | CsvFilePath _ -> "path of Degiro account CSV file"
+            | CsvFilePath _ -> "path of Degiro account statement CSV file"
             | Year _ -> "year"
             | Period _ -> "Irish CGT tax period (1: Jan-Nov; 2: Dec)"
-            | OutputPath _ -> "output path for earnings and dividends CSVs"
+            | OutputPath _ -> "path for output earnings and dividends CSVs"
 
 
 let printVersion () = printfn $"{PROGRAM_NAME} v{VERSION}"

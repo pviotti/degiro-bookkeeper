@@ -25,7 +25,7 @@ USAGE: dgbk [--help] [--version] [--year <year>] [--period <period>] [--outputpa
 
 CSVFILEPATH:
 
-    <input>               path of Degiro account CSV file
+    <input>               path of Degiro account statement CSV file
 
 OPTIONS:
 
@@ -33,20 +33,20 @@ OPTIONS:
     --year, -y <year>     year
     --period, -p <period> Irish CGT tax period (1: Jan-Nov; 2: Dec)
     --outputpath, -o <output path>
-                          output path for earnings and dividends CSVs
+                          path for output earnings and dividends CSVs
     --help                display this list of options.
 ```
 
 ## Features
 
- - computes earnings (or losses) in € using exact exchange rate as per account statement
+ - computes earnings in € using exact exchange rate as per account statement
    in case of transactions in non-€ currencies
  - accounts for Degiro fees on transactions
  - accounts for taxes on dividends automatically deducted by Degiro
  - only outputs earnings in €. Transactions are supported in the following currencies: €, USD
  - processes malformed input CSV (i.e. with garbled rows) and output cleaned up CSV
    in the same folder as the input file (with `-clean.csv` suffix)
- - computes dividends in € or USD in a given year
+ - works out dividends in € or USD in a given year
  - supports Irish CGT tax periods (i.e. Initial and Later - see revenue.ie)
 
 
