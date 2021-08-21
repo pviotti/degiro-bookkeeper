@@ -5,7 +5,7 @@
 
 This is a simple command line tool to work out earnings and dividends figures
 for a [Degiro] account.
-It takes as input a Degiro account CSV statement file, and outputs to console
+It takes as input a Degiro account CSV statement file in English language, and outputs to console
 or to CSV files information about earnings from sells transactions and dividends
 in a given period.
 
@@ -43,11 +43,15 @@ OPTIONS:
    in case of transactions in non-€ currencies
  - accounts for Degiro fees on transactions
  - accounts for taxes on dividends automatically deducted by Degiro
- - only outputs earnings in €. Transactions are supported in the following currencies: €, USD
  - processes malformed input CSV (i.e. with garbled rows) and output cleaned up CSV
    in the same folder as the input file (with `-clean.csv` suffix)
  - works out dividends in € or USD in a given year
  - supports Irish CGT tax periods (i.e. Initial and Later - see revenue.ie)
 
+## Limitations
+
+ - only supports Degiro account statements in English language
+ - only outputs earnings in €
+ - only supports transactions in € or USD
 
  [degiro]: https://www.degiro.ie/
