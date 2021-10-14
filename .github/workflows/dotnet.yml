@@ -45,14 +45,12 @@ jobs:
         name: CoverageReport
         path: coveragereport
     - name: Codecov
-      uses: codecov/codecov-action@v1.5.0
+      uses: codecov/codecov-action@v2
       with:
-        token: '${{ secrets.CODECOV_TOKEN }}'
         files: ./coveragereport/Cobertura.xml
         directory: ./coveragereport/
         flags: unittests
-        name: 'Degiro Accounting coverage'
-        fail_ci_if_error: true
+        name: 'Degiro Bookkeeper coverage'
         path_to_write_report: ./coveragereport/codecov_report.txt
         verbose: true
         
