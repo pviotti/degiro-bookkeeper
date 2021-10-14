@@ -51,7 +51,6 @@ jobs:
         directory: ./coveragereport/
         flags: unittests
         name: 'Degiro Bookkeeper coverage'
-        path_to_write_report: ./coveragereport/codecov_report.txt
         verbose: true
         
   publish:
