@@ -23,7 +23,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: '6.x'
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
@@ -52,7 +52,7 @@ jobs:
         flags: unittests
         name: 'Degiro Bookkeeper coverage'
         verbose: true
-        
+
   publish:
     needs: build
     strategy:
@@ -70,25 +70,25 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: '6.x'
     - name: Set version variable (Linux and MacOS)
       if: matrix.config.id != 'win'
       run: echo "VER=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
     - name: Set version variable (Windows)
       if: matrix.config.id == 'win'
       run: echo "VER=$(($env:GITHUB_REF -split '/')[-1] -replace ' ','')" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-      
+
     - name: Build release artifacts
       run: |
         dotnet publish src/Degiro.Cli/Degiro.Cli.fsproj -c Release -o dgbk-${{ env.VER }}-${{ matrix.config.id }}
-        dotnet publish src/Degiro.Cli/Degiro.Cli.fsproj -c Release -r ${{ matrix.config.rid }} -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained true -o dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc
+        dotnet publish src/Degiro.Cli/Degiro.Cli.fsproj -c Release -r ${{ matrix.config.rid }} --self-contained -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained true -o dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc
 
     - name: Zip artifacts (Linux and MacOS)
       if: matrix.config.id != 'win'
       run: |
         zip -r dgbk-${{ env.VER }}-${{ matrix.config.id }}.zip dgbk-${{ env.VER }}-${{ matrix.config.id }}
         zip -r dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc.zip dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc
-        
+
     - name: Zip artifacts (Windows)
       if: matrix.config.id == 'win'
       run: |
