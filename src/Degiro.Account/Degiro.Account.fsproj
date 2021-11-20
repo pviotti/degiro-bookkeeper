@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>Degiro.Account</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- <Compile Include="Finnhub.fs" /> -->
-    <Compile Include="Model.fs" />    
-    <Compile Include="Degiro.fs" />    
+    <Compile Include="Model.fs" />
+    <Compile Include="Degiro.fs" />
     <Compile Include="Output.fs" />
   </ItemGroup>
 
