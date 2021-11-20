@@ -31,7 +31,7 @@ module Account =
         |> Seq.groupBy
             (fun row ->
                 match row.OrderId with
-                | Some (x) -> x.ToString().[0..18] // XXX because some Guids can be malformed in input csv
+                | Some (x) -> x.ToString()[0..18] // XXX because some Guids can be malformed in input csv
                 | None -> "")
 
     /// Build a transaction object (Txn) (i.e. rows corresponding to DeGiro orders)
@@ -52,10 +52,10 @@ module Account =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
                 let txnType =
-                    TxnType.FromString matches.Groups.[1].Value
+                    TxnType.FromString matches.Groups[1].Value
 
                 let valueCurrency =
-                    Currency.FromString matches.Groups.[4].Value
+                    Currency.FromString matches.Groups[4].Value
 
                 txnType, valueCurrency
 
@@ -63,14 +63,14 @@ module Account =
                 let matches =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
-                int matches.Groups.[2].Value
+                int matches.Groups[2].Value
 
             let getFractionalPrice (row: Row) =
                 let matches =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
-                (decimal matches.Groups.[2].Value)
-                * (decimal matches.Groups.[3].Value)
+                (decimal matches.Groups[2].Value)
+                * (decimal matches.Groups[3].Value)
 
             let getTotQuantity (rows: seq<Row>) (filter: Row -> bool) =
                 rows
@@ -253,7 +253,7 @@ module Account =
         let rows = csvContent.Split '\n'
 
         let isMalformed =
-            Array.Exists(rows, (fun row -> (row.[0..2].Equals ",,,")))
+            Array.Exists(rows, (fun row -> (row[0..2].Equals ",,,")))
 
         if isMalformed then
             let sb = StringBuilder()
@@ -262,7 +262,7 @@ module Account =
             |> Array.iter
                 (fun row ->
                     let strToAppend =
-                        if row.[0..2].Equals ",,," then
+                        if row[0..2].Equals ",,," then
                             (Array.last (row.Split(","))).TrimEnd()
                         else
                             Environment.NewLine + row.TrimEnd()

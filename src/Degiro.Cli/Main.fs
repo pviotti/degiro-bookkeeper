@@ -77,7 +77,7 @@ let main argv =
 
         if isMalformed then
             let newFilePath =
-                csvFilePath.[..csvFilePath.Length - 5]
+                csvFilePath[..csvFilePath.Length - 5]
                 + "-clean.csv"
 
             File.WriteAllText(newFilePath, cleanCsv)
