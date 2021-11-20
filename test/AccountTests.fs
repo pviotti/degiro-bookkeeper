@@ -51,7 +51,7 @@ module AccountTests =
               OrderId = Guid.Parse("9f8a14c4-ad5c-4a92-99af-60a69e8b584e") }
 
         txns |> should haveLength 1
-        txns.[0] |> should equal expectedTxn
+        txns[0] |> should equal expectedTxn
 
     [<Test>]
     let ``BuildTxn with many description rows in EUR`` () =
@@ -84,7 +84,7 @@ module AccountTests =
               OrderId = Guid.Parse("e30677c2-cf9e-4dac-8405-f2361f60e0fd") }
 
         txns |> should haveLength 1
-        txns.[0] |> should equal expectedTxn
+        txns[0] |> should equal expectedTxn
 
     [<Test>]
     let ``BuiltTxn with cancelled and compensated transactions`` () =
@@ -124,7 +124,7 @@ module AccountTests =
               OrderId = Guid.Parse("c6aead59-29c2-40f4-8158-b92cc9b6867e") }
 
         txns |> should haveLength 1
-        txns.[0] |> should equal expectedTxn
+        txns[0] |> should equal expectedTxn
 
     [<Test>]
     let ``Get total deposits`` () =
@@ -265,4 +265,4 @@ module AccountTests =
 
         let allDividends = getAllDividends rows 2020
         allDividends |> should haveLength 1
-        allDividends.[0] |> should equal expectedDividend
+        allDividends[0] |> should equal expectedDividend
