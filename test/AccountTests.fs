@@ -13,6 +13,7 @@ module AccountTests =
     let header =
         """Date,Time,Value date,Product,ISIN,Description,FX,Change,,Balance,,Order ID"""
 
+
     [<Test>]
     let ``BuildTxn with many description rows in USD`` () =
         let testRows =
@@ -53,6 +54,7 @@ module AccountTests =
         txns |> should haveLength 1
         txns[0] |> should equal expectedTxn
 
+
     [<Test>]
     let ``BuildTxn with many description rows in EUR`` () =
         let testRows =
@@ -85,6 +87,7 @@ module AccountTests =
 
         txns |> should haveLength 1
         txns[0] |> should equal expectedTxn
+
 
     [<Test>]
     let ``BuiltTxn with cancelled and compensated transactions`` () =
@@ -126,6 +129,7 @@ module AccountTests =
         txns |> should haveLength 1
         txns[0] |> should equal expectedTxn
 
+
     [<Test>]
     let ``Get total deposits`` () =
         let testRows =
@@ -152,6 +156,7 @@ module AccountTests =
         getTotalYearDeposits rows 2021
         |> should equal 700.0
 
+
     [<Test>]
     let ``Get total fees for a year`` () =
         let testRows =
@@ -175,6 +180,7 @@ module AccountTests =
         getTotalYearFees rows 2018 |> should equal -2.5
         getTotalYearFees rows 2019 |> should equal -6.53
         getTotalYearFees rows 2020 |> should equal -0.51
+
 
     [<Test>]
     let ``Get earnings in period`` () =
@@ -242,6 +248,46 @@ module AccountTests =
         getSellsEarnings [ txnSellA1 ] allTxns
         |> should equal [ expectedEarning ]
 
+
+    [<Test>]
+    let ``Get earnings of stock that changed name between buy and sell transactions`` () =
+        let testRows =
+            header
+            + """
+19-11-2020,10:18,18-11-2020,FLATEX EURO BANKACCOUNT,NLFLATEXACNT,Degiro Cash Sweep Transfer,,EUR,-1777.22,EUR,4007.15,
+18-11-2020,15:30,18-11-2020,BRAND NEW NAME,US12008C1234,FX Debit,1.1352,USD,-2018.24,USD,0.00,cd5560a8-c903-4ddd-aacf-ad1319b6c588
+18-11-2020,15:30,18-11-2020,BRAND NEW NAME,US12008C1234,FX Credit,,EUR,1777.82,EUR,5784.37,cd5560a8-c903-4ddd-aacf-ad1319b6c588
+18-11-2020,15:30,18-11-2020,BRAND NEW NAME,US12008C1234,DEGIRO Transaction Fee,,EUR,-0.10,EUR,4006.55,cd5560a8-c903-4ddd-aacf-ad1319b6c588
+18-11-2020,15:30,18-11-2020,BRAND NEW NAME,US12008C1234,DEGIRO Transaction Fee,,EUR,-0.50,EUR,4006.65,cd5560a8-c903-4ddd-aacf-ad1319b6c588
+18-11-2020,15:30,18-11-2020,BRAND NEW NAME,US12008C1234,Sell 28 BRAND NEW NAME@72.08 USD (US12008C1234),,USD,2018.24,USD,2018.24,cd5560a8-c903-4ddd-aacf-ad1319b6c588
+20-07-2020,16:51,20-07-2020,BRAND NEW NAME,US12008C1234,ISIN CHANGE: Buy 28 BRAND NEW NAME@40.47 USD (US12008C1234),,USD,-1133.16,USD,0.00,
+20-07-2020,16:51,20-07-2020,ORIGINAL NAME,US12008C1234,ISIN CHANGE: Sell 28 ORIGINAL NAME@40.47 USD (US12008C1234),,USD,1133.16,USD,1133.16,
+03-06-2020,15:30,03-06-2020,ORIGINAL NAME,US12008C1234,FX Credit,1.2144,USD,1190.56,USD,0.00,d08f886f-c142-4f97-96fe-73ebcec1e180
+03-06-2020,15:30,03-06-2020,ORIGINAL NAME,US12008C1234,FX Debit,,EUR,-980.38,EUR,23.25,d08f886f-c142-4f97-96fe-73ebcec1e180
+03-06-2020,15:30,03-06-2020,ORIGINAL NAME,US12008C1234,DEGIRO Transaction Fee,,EUR,-0.09,EUR,1003.63,d08f886f-c142-4f97-96fe-73ebcec1e180
+03-06-2020,15:30,03-06-2020,ORIGINAL NAME,US12008C1234,DEGIRO Transaction Fee,,EUR,-0.50,EUR,1003.72,d08f886f-c142-4f97-96fe-73ebcec1e180
+03-06-2020,15:30,03-06-2020,ORIGINAL NAME,US12008C1234,Buy 28 ORIGINAL NAME@42.52 USD (US12008C1234),,USD,-1190.56,USD,-1190.56,d08f886f-c142-4f97-96fe-73ebcec1e180"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+
+        let allTnxs =
+            Seq.map buildTxn txnsGrouped |> Seq.toList
+
+        let expectedEarning =
+            { Date = DateTime(2020, 11, 18, 15, 30, 0)
+              Product = "BRAND NEW NAME"
+              ProductId = "US12008C1234"
+              Value = (1777.82m - 980.38m)
+              Percent = Math.Round(((1777.82m - 980.38m) / 980.38m) * 100.0m, 2) }
+
+        let sellTxns =
+            getSellTxnsInPeriod allTnxs 2020 Period.All
+
+        getSellsEarnings sellTxns allTnxs
+        |> should equal [ expectedEarning ]
+
+
     [<Test>]
     let ``Get dividends`` () =
         let testRows =
@@ -265,4 +311,6 @@ module AccountTests =
 
         let allDividends = getAllDividends rows 2020
         allDividends |> should haveLength 1
-        allDividends[0] |> should equal expectedDividend
+
+        allDividends[0]
+        |> should equal expectedDividend

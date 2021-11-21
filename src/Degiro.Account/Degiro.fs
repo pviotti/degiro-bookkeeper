@@ -176,7 +176,7 @@ module Account =
             |> List.filter
                 (fun x ->
                     x.Type = Buy
-                    && x.Product = sellTxn.Product
+                    && x.ProductId = sellTxn.ProductId
                     && x.Date < sellTxn.Date)
             |> List.sortByDescending (fun x -> x.Date)
 
@@ -184,7 +184,7 @@ module Account =
             if quantityToSell = 0 then
                 totBuyPrice
             elif List.isEmpty buys && quantityToSell <> 0 then // Should not happen
-                failwithf $"Error: can't find buy txns for remaining {quantityToSell} sells of %A{sellTxn}"
+                failwithf $"can't find buy transactions for remaining {quantityToSell} sells of %A{sellTxn}"
             else
                 let currBuy = List.head buys
 
