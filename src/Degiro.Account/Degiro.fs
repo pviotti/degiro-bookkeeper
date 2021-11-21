@@ -24,7 +24,8 @@ module Account =
 
     type Row = AccountCsv.Row
 
-    /// Get all rows corresponding to some order, grouped by their OrderId
+
+    /// Get all rows corresponding to some DeGiro order, grouped by their OrderId.
     let getRowsGroupedByOrderId (rows: seq<Row>) : seq<string * seq<Row>> =
         rows
         |> Seq.filter (fun row -> Option.isSome row.OrderId)
@@ -34,8 +35,9 @@ module Account =
                 | Some (x) -> x.ToString()[0..18] // XXX because some Guids can be malformed in input csv
                 | None -> "")
 
-    /// Build a transaction object (Txn) (i.e. rows corresponding to DeGiro orders)
-    /// by parsing multiple rows in the account corresponding to the transaction in object
+
+    /// Build a transaction object (Txn).
+    /// A transaction object (Txn) summarizes a set of rows in the Account Statement that correspond to a DeGiro order.
     let buildTxn (txn: string * seq<Row>) =
         let allRows = snd txn
 
@@ -144,7 +146,7 @@ module Account =
             { Date = firstDescRow.Date + firstDescRow.Time
               Type = txnType
               Product = firstDescRow.Product
-              ProductId = firstDescRow.ISIN
+              ISIN = firstDescRow.ISIN
               ProdType = Shares // FIXME: tell apart ETF from Shares
               Quantity = totQuantity
               Fees = degiroFees
@@ -153,6 +155,7 @@ module Account =
               ValueCurrency = valueCurrency
               OrderId = (Option.defaultValue Guid.Empty firstDescRow.OrderId) }
         with ex -> failwithf $"Error: %A{Seq.last allRows} - %s{ex.Message} \n%A{ex}"
+
 
     /// Get all sell transactions for the given year and Irish tax period
     let getSellTxnsInPeriod (txns: list<Txn>) (year: int) (period: Period) =
@@ -176,7 +179,7 @@ module Account =
             |> List.filter
                 (fun x ->
                     x.Type = Buy
-                    && x.ProductId = sellTxn.ProductId
+                    && x.ISIN = sellTxn.ISIN
                     && x.Date < sellTxn.Date)
             |> List.sortByDescending (fun x -> x.Date)
 
@@ -205,6 +208,7 @@ module Account =
         let earning = sellTxn.Price + totBuyPrice
         earning, Math.Round(earning / (-totBuyPrice) * 100.0m, 2)
 
+
     /// Return the Earning objects for a given sequence of sells
     let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) : list<Earning> =
         sells
@@ -214,11 +218,12 @@ module Account =
 
                 { Date = sell.Date
                   Product = sell.Product
-                  ProductId = sell.ProductId
+                  ProductId = sell.ISIN
                   Value = earning
                   Percent = earningPercentage })
 
-    /// Compute total DeGiro Fees (txn fees and stock exchange fees)
+
+    /// Compute total DeGiro Fees (transactions fees and stock exchange fees)
     let getTotalYearFees (rows: seq<Row>) (year: int) =
         rows
         |> Seq.filter
@@ -228,7 +233,8 @@ module Account =
                     || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
         |> Seq.sumBy (fun x -> x.Price.Value)
 
-    /// Get deposits amounts
+
+    /// Get the total sum of deposits recorded in the Account Statement
     let getTotalDeposits (rows: seq<Row>) =
         rows
         |> Seq.filter
@@ -237,6 +243,8 @@ module Account =
                 || x.Description.Equals "flatex Deposit")
         |> Seq.sumBy (fun x -> x.Price.Value)
 
+
+    /// Get the total sum of deposits for a given year
     let getTotalYearDeposits (rows: seq<Row>) (year: int) =
         rows
         |> Seq.filter
@@ -245,6 +253,7 @@ module Account =
                  || x.Description.Equals "flatex Deposit")
                 && x.Date.Year = year)
         |> Seq.sumBy (fun x -> x.Price.Value)
+
 
     /// Clean a CSV string from malformed rows.
     /// Returns the clean string and
@@ -272,6 +281,7 @@ module Account =
             sb.ToString().Trim(), isMalformed
         else
             csvContent, isMalformed
+
 
     /// Return a list of Dividend objects for a given year
     /// sorted in decreasing order by total dividend value.
