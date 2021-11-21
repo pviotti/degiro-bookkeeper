@@ -21,20 +21,20 @@ in a given period.
 
 ```bash
 $ ./dgbk --help
-USAGE: dgbk [--help] [--version] [--year <year>] [--period <period>] [--outputpath <output path>] <input>
+USAGE: dgbk [--help] [--version] --year <year> [--period <period>] [--outputpath <output path>] <input>
 
 CSVFILEPATH:
 
-    <input>               path of Degiro account statement CSV file
+    <input>               path of Degiro Account Statement CSV file
 
 OPTIONS:
 
     --version             print dgbk version
-    --year, -y <year>     year
-    --period, -p <period> Irish CGT tax period (1: Jan-Nov; 2: Dec)
+    --year, -y <year>     year (in YYYY format)
+    --period, -p <period> Irish CGT tax period (1: Jan-Nov; 2: Dec; default: whole year)
     --outputpath, -o <output path>
-                          path for output earnings and dividends CSVs
-    --help                display this list of options.
+                          path for earnings and dividends CSVs output
+    --help                display this list of options
 ```
 
 ## Features

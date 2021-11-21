@@ -25,7 +25,7 @@ module Account =
     type Row = AccountCsv.Row
 
 
-    /// Get all rows corresponding to some DeGiro order, grouped by their OrderId.
+    /// Get all rows corresponding to some Degiro order, grouped by their OrderId.
     let getRowsGroupedByOrderId (rows: seq<Row>) : seq<string * seq<Row>> =
         rows
         |> Seq.filter (fun row -> Option.isSome row.OrderId)
@@ -37,7 +37,7 @@ module Account =
 
 
     /// Build a transaction object (Txn).
-    /// A transaction object (Txn) summarizes a set of rows in the Account Statement that correspond to a DeGiro order.
+    /// A transaction object (Txn) summarizes a set of rows in the Account Statement that correspond to a Degiro order.
     let buildTxn (txn: string * seq<Row>) =
         let allRows = snd txn
 
@@ -223,7 +223,7 @@ module Account =
                   Percent = earningPercentage })
 
 
-    /// Compute total DeGiro Fees (transactions fees and stock exchange fees)
+    /// Compute total Degiro Fees (transactions fees and stock exchange fees)
     let getTotalYearFees (rows: seq<Row>) (year: int) =
         rows
         |> Seq.filter

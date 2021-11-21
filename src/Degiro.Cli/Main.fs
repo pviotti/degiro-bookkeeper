@@ -19,8 +19,8 @@ let PROGRAM_NAME = AppDomain.CurrentDomain.FriendlyName
 
 type CliArguments =
     | [<NoAppSettings>] Version
-    | [<MainCommand>] CsvFilePath of input: string
-    | [<AltCommandLine("-y")>] Year of year: int
+    | [<MainCommand; Mandatory>] CsvFilePath of input: string
+    | [<AltCommandLine("-y"); Mandatory>] Year of year: int
     | [<AltCommandLine("-p")>] Period of period: int
     | [<AltCommandLine("-o")>] OutputPath of output_path: string
 
@@ -28,10 +28,10 @@ type CliArguments =
         member s.Usage =
             match s with
             | Version _ -> $"print {PROGRAM_NAME} version"
-            | CsvFilePath _ -> "path of Degiro account statement CSV file"
-            | Year _ -> "year"
-            | Period _ -> "Irish CGT tax period (1: Jan-Nov; 2: Dec)"
-            | OutputPath _ -> "path for output earnings and dividends CSVs"
+            | CsvFilePath _ -> "path of Degiro Account Statement CSV file"
+            | Year _ -> "year (in YYYY format)"
+            | Period _ -> "Irish CGT tax period (1: Jan-Nov; 2: Dec; default: whole year)"
+            | OutputPath _ -> "path for earnings and dividends CSVs output"
 
 
 let printVersion () = printfn $"{PROGRAM_NAME} v{VERSION}"
@@ -61,7 +61,7 @@ let main argv =
                 match args.GetResult Period with
                 | 1 -> Period.Initial
                 | 2 -> Period.Later
-                | _ -> failwith "Irish CGT tax period not supported (1: Jan-Nov; 2: Dec)"
+                | _ -> failwith "Irish CGT tax period not supported (1: Jan-Nov; 2: Dec; <omitted>: all year)"
             else
                 Period.All
 
