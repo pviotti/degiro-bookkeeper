@@ -35,7 +35,7 @@ type Txn =
     { Date: DateTime
       Type: TxnType
       Product: string
-      ProductId: string
+      ISIN: string // International Security Identification Number
       ProdType: ProductType
       Quantity: int
       Fees: decimal
