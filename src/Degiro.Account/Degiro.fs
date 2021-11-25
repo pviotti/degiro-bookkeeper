@@ -218,7 +218,8 @@ module Account =
 
                 { Date = sell.Date
                   Product = sell.Product
-                  ProductId = sell.ISIN
+                  ISIN = sell.ISIN
+                  ProdType = sell.ProdType
                   Value = earning
                   Percent = earningPercentage })
 
@@ -318,23 +319,15 @@ module Account =
                         && x.Product = product)
                 |> List.sumBy (fun x -> x.Price.Value)
 
-            let currency =
-                Currency.FromString
-                    (rowsDividends
-                     |> List.find (fun x -> x.Product = product))
-                        .Change
-
-            let productId =
-                (rowsDividends
-                 |> List.find (fun x -> x.Product = product))
-                    .ISIN
+            let dividendRow = rowsDividends
+                                 |> List.find (fun x -> x.Product = product)
 
             { Year = year
               Product = product
-              ProductId = productId
+              ISIN = dividendRow.ISIN
               Value = totDividends
               ValueTax = totTaxDividends
-              Currency = currency }
+              Currency = Currency.FromString dividendRow.Change}
 
         productsWithDividendsInYear
         |> List.map (getAllDividendsForProductInYear rowsDividendsInYear)

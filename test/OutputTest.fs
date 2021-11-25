@@ -17,20 +17,23 @@ module OutputTests =
         let earningOne =
             { Date = DateTime(2021, 1, 2)
               Product = "ACME Inc A"
-              ProductId = "ABC1"
+              ISIN = "ABC1"
+              ProdType = Shares
               Value = 123.0m
               Percent = 20.0m }
 
         let earningTwo =
             { earningOne with
                   Product = "ACME Inc B"
-                  ProductId = "ABC2"
+                  ISIN = "ABC2"
+                  ProdType = ETF
                   Value = 500.0m
                   Percent = 10.0m }
 
-        let expectedStr = """Date,Product,ProductId,Value,Percent
-2021-01-02,ACME Inc A,ABC1,123.0,20.0
-2021-01-02,ACME Inc B,ABC2,500.0,10.0
+        let expectedStr =
+            """Date,Product,ISIN,Type,Value,Percent
+2021-01-02,ACME Inc A,ABC1,Shares,123.0,20.0
+2021-01-02,ACME Inc B,ABC2,ETF,500.0,10.0
 """
 
         earningsToCsvString [ earningOne
@@ -42,7 +45,7 @@ module OutputTests =
         earningsToCsvString List.empty
         |> should
             equal
-            ("Date,Product,ProductId,Value,Percent"
+            ("Date,Product,ISIN,Type,Value,Percent"
              + Environment.NewLine)
 
 
@@ -51,7 +54,7 @@ module OutputTests =
         let dividendOne =
             { Year = 2021
               Product = "ACME Inc A"
-              ProductId = "ABC1"
+              ISIN = "ABC1"
               Value = 42.0m
               ValueTax = 0.50m
               Currency = USD }
@@ -59,12 +62,13 @@ module OutputTests =
         let dividendTwo =
             { dividendOne with
                   Product = "ACME Inc B"
-                  ProductId = "ABC2"
+                  ISIN = "ABC2"
                   Value = 142.0m
                   ValueTax = 0.52m
                   Currency = EUR }
 
-        let expectedStr = """Product,ProductId,Value,Value Tax,Currency
+        let expectedStr =
+            """Product,ISIN,Value,Value Tax,Currency
 ACME Inc A,ABC1,42.0,0.50,USD
 ACME Inc B,ABC2,142.0,0.52,EUR
 """
@@ -79,7 +83,7 @@ ACME Inc B,ABC2,142.0,0.52,EUR
         dividendsToCsvString List.Empty
         |> should
             equal
-            ("Product,ProductId,Value,Value Tax,Currency"
+            ("Product,ISIN,Value,Value Tax,Currency"
              + Environment.NewLine)
 
     [<TestCase>]
@@ -87,14 +91,16 @@ ACME Inc B,ABC2,142.0,0.52,EUR
         let earningOne =
             { Date = DateTime(2021, 1, 2)
               Product = "ACME Inc A"
-              ProductId = "ABC1"
+              ISIN = "ABC1"
+              ProdType = Shares
               Value = 100.0m
               Percent = 20m }
 
         let earningTwo =
             { Date = DateTime(2021, 2, 2)
               Product = "ACME Inc B"
-              ProductId = "ABC2"
+              ISIN = "ABC2"
+              ProdType = ETF
               Value = 50.0m
               Percent = 10m }
 
@@ -113,7 +119,7 @@ ACME Inc B,ABC2,142.0,0.52,EUR
         let dividendOne =
             { Year = 2021
               Product = "ACME Inc A"
-              ProductId = "ABC1"
+              ISIN = "ABC1"
               Value = 2.0m
               ValueTax = -0.50m
               Currency = EUR }
@@ -121,7 +127,7 @@ ACME Inc B,ABC2,142.0,0.52,EUR
         let dividendTwo =
             { Year = 2021
               Product = "ACME Inc B"
-              ProductId = "ABC2"
+              ISIN = "ABC2"
               Value = 5.0m
               ValueTax = -0.50m
               Currency = USD }

@@ -17,7 +17,7 @@ module Utils =
 
 type ProductType =
     | Shares
-    | Etf
+    | ETF
 
 type TxnType =
     | Sell
@@ -47,18 +47,21 @@ type Txn =
 type Earning =
     { Date: DateTime
       Product: string
-      ProductId: string
+      ISIN: string
+      ProdType: ProductType
       Value: decimal
       Percent: decimal }
 
 type Dividend =
     { Year: int
       Product: string
-      ProductId: string
+      ISIN: string
+      //ProdType: ProductType -- can't tell product type from a dividend row (without looking up ISIN)
       Value: decimal
       ValueTax: decimal
       Currency: Currency }
 
+/// Irish CGT period
 type Period =
     | Initial = 1
     | Later = 2

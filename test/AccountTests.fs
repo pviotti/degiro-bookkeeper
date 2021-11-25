@@ -52,7 +52,7 @@ module AccountTests =
               OrderId = Guid.Parse("9f8a14c4-ad5c-4a92-99af-60a69e8b584e") }
 
         txns |> should haveLength 1
-        txns[0] |> should equal expectedTxn
+        txns[ 0 ] |> should equal expectedTxn
 
 
     [<Test>]
@@ -86,7 +86,7 @@ module AccountTests =
               OrderId = Guid.Parse("e30677c2-cf9e-4dac-8405-f2361f60e0fd") }
 
         txns |> should haveLength 1
-        txns[0] |> should equal expectedTxn
+        txns[ 0 ] |> should equal expectedTxn
 
 
     [<Test>]
@@ -127,7 +127,7 @@ module AccountTests =
               OrderId = Guid.Parse("c6aead59-29c2-40f4-8158-b92cc9b6867e") }
 
         txns |> should haveLength 1
-        txns[0] |> should equal expectedTxn
+        txns[ 0 ] |> should equal expectedTxn
 
 
     [<Test>]
@@ -241,7 +241,8 @@ module AccountTests =
         let expectedEarning =
             { Date = txnSellA1.Date
               Product = txnSellA1.Product
-              ProductId = "ABC"
+              ISIN = "ABC"
+              ProdType = Shares
               Value = 105.0m
               Percent = Math.Round((105.0m / 95.0m) * 100.0m, 2) }
 
@@ -277,7 +278,8 @@ module AccountTests =
         let expectedEarning =
             { Date = DateTime(2020, 11, 18, 15, 30, 0)
               Product = "BRAND NEW NAME"
-              ProductId = "US12008C1234"
+              ISIN = "US12008C1234"
+              ProdType = Shares
               Value = (1777.82m - 980.38m)
               Percent = Math.Round(((1777.82m - 980.38m) / 980.38m) * 100.0m, 2) }
 
@@ -304,7 +306,7 @@ module AccountTests =
         let expectedDividend =
             { Year = 2020
               Product = "ACME Inc"
-              ProductId = "CODE123"
+              ISIN = "CODE123"
               Value = 10.5m
               ValueTax = -1.58m
               Currency = USD }
@@ -312,5 +314,5 @@ module AccountTests =
         let allDividends = getAllDividends rows 2020
         allDividends |> should haveLength 1
 
-        allDividends[0]
+        allDividends[ 0 ]
         |> should equal expectedDividend
