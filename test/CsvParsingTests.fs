@@ -10,7 +10,8 @@ module CsvParsingTests =
 
     [<Test>]
     let ``Clean a malformed CSV string`` () =
-        // Degiro account CSV files have malformed rows, as the following
+        // Degiro account CSV files may have malformed rows, as the following
+
         let malformedRows =
             """10-09-2020,21:37,10-09-2020,SHARE NAME,CODE123,FX Debit,,EUR,-659995.30,EUR,663.86,df793c8a-2033-43c1-
 ,,,,,,,,,,,abd3-6d415682f99f

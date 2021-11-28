@@ -90,6 +90,39 @@ module AccountTests =
 
 
     [<Test>]
+    let ``BuildTxn with ETF`` () =
+        let realEtfDescr = [ "VANGUARD FTSE AW"; "SPDR S&P 500"; "ISHARES S&P 500"; "LYXOR ETF CAC 40" ]
+        let rndEtfDesc = realEtfDescr[Random().Next(realEtfDescr.Length)]
+        let testRows =
+            header
+            + $"""
+        08-06-2020,09:05,08-06-2020,{rndEtfDesc},CODE321,DEGIRO Transaction Fee,,EUR,-2.00,EUR,65.44,e30677c2-cf9e-4dac-8405-f2361f60e0fd
+        08-06-2020,09:05,08-06-2020,{rndEtfDesc},CODE321,Buy 2 {rndEtfDesc}@9.598 EUR (CODE321),,EUR,-19.20,EUR,67.45,e30677c2-cf9e-4dac-8405-f2361f60e0fd"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+
+        let txns =
+            Seq.map buildTxn txnsGrouped |> Seq.toList
+
+        let expectedTxn =
+            { Date = DateTime(2020, 6, 8, 9, 5, 0)
+              Type = Buy
+              Product = rndEtfDesc
+              ISIN = "CODE321"
+              ProdType = ProductType.ETF
+              Quantity = 2
+              Price = -19.20m
+              Value = 9.598m
+              ValueCurrency = Currency.EUR
+              Fees = -2.00m
+              OrderId = Guid.Parse("e30677c2-cf9e-4dac-8405-f2361f60e0fd") }
+
+        txns |> should haveLength 1
+        txns[ 0 ] |> should equal expectedTxn
+
+
+    [<Test>]
     let ``BuiltTxn with cancelled and compensated transactions`` () =
         // Sometimes, Degiro executes a Buy order and then cancel it by
         // issuing a Sell transaction of the same exact amount with the same OrderId
@@ -210,7 +243,7 @@ module AccountTests =
               Quantity = 5
               Date = DateTime(2019, 6, 6)
               ISIN = "ABC2"
-              ProdType = ProductType.Shares
+              ProdType = ProductType.ETF
               Fees = 2.5m
               Value = 123.0m
               ValueCurrency = Currency.EUR
