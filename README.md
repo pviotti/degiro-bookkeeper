@@ -39,14 +39,15 @@ OPTIONS:
 
 ## Features
 
- - computes earnings in € using exact exchange rate as per account statement
-   in case of transactions in non-€ currencies
- - accounts for Degiro fees on transactions
- - accounts for taxes on dividends automatically deducted by Degiro
- - processes malformed input CSV (i.e. with garbled rows) and output cleaned up CSV
+ - compute earnings in € using exact exchange rate as per account statement
+ - tell apart ETF and shares earnings
+ - account for Degiro fees on transactions
+ - account for taxes on dividends automatically deducted by Degiro
+ - process malformed input CSV (i.e. with garbled rows) and output cleaned up CSV
    in the same folder as the input file (with `-clean.csv` suffix)
- - works out dividends in € or USD in a given year
- - supports Irish CGT tax periods (i.e. Initial and Later - see revenue.ie)
+ - work out dividends in € or USD in a given year
+ - country-specific features:
+   - Ireland: support for CGT tax periods (i.e. Initial and Later - see revenue.ie)
 
 ## Limitations
 
