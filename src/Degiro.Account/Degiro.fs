@@ -11,6 +11,8 @@ module Account =
     let txnDescriptionRegExp =
         "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD)"
 
+    let etfDescriptionMarkers = ["ETF"; "STOXX"; "SPDR S&P"; "ISHARES"; "EQQQ"; "VANGUARD"; "LYXOR"]
+
     [<Literal>]
     let accountStatementSampleCsv = """
         Date,Time,Value date,Product,ISIN,Description,FX,Change,,Balance,,Order ID
@@ -34,6 +36,16 @@ module Account =
                 match row.OrderId with
                 | Some (x) -> x.ToString()[0..18] // XXX because some Guids can be malformed in input csv
                 | None -> "")
+
+
+    /// Return a product type depending on patterns in the transaction description
+    let getProductType (description : string) : ProductType =
+        etfDescriptionMarkers
+        |> List.map description.Contains
+        |> List.contains true
+        |> function
+            | true -> ETF
+            | false -> Shares
 
 
     /// Build a transaction object (Txn).
@@ -143,11 +155,13 @@ module Account =
 
                     price, totValue, totQuantity
 
+            let prodType = getProductType firstDescRow.Description
+
             { Date = firstDescRow.Date + firstDescRow.Time
               Type = txnType
               Product = firstDescRow.Product
               ISIN = firstDescRow.ISIN
-              ProdType = Shares // FIXME: tell apart ETF from Shares
+              ProdType = prodType
               Quantity = totQuantity
               Fees = degiroFees
               Price = price
@@ -218,7 +232,8 @@ module Account =
 
                 { Date = sell.Date
                   Product = sell.Product
-                  ProductId = sell.ISIN
+                  ISIN = sell.ISIN
+                  ProdType = sell.ProdType
                   Value = earning
                   Percent = earningPercentage })
 
@@ -318,23 +333,15 @@ module Account =
                         && x.Product = product)
                 |> List.sumBy (fun x -> x.Price.Value)
 
-            let currency =
-                Currency.FromString
-                    (rowsDividends
-                     |> List.find (fun x -> x.Product = product))
-                        .Change
-
-            let productId =
-                (rowsDividends
-                 |> List.find (fun x -> x.Product = product))
-                    .ISIN
+            let dividendRow = rowsDividends
+                                 |> List.find (fun x -> x.Product = product)
 
             { Year = year
               Product = product
-              ProductId = productId
+              ISIN = dividendRow.ISIN
               Value = totDividends
               ValueTax = totTaxDividends
-              Currency = currency }
+              Currency = Currency.FromString dividendRow.Change}
 
         productsWithDividendsInYear
         |> List.map (getAllDividendsForProductInYear rowsDividendsInYear)

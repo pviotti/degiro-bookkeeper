@@ -7,17 +7,18 @@ open FSharp.Data
 module CsvOutput =
 
     type EarningsCsvType =
-        CsvProvider<Sample="Date,Product,ProductId,Value,Percent", Schema="Date (string), Product (string), ProductId (string), Value (decimal), Percent (decimal)", HasHeaders=true>
+        CsvProvider<Sample="Date,Product,ISIN,Type,Value,Percent", Schema="Date (string), Product (string), ISIN (string), Type (string), Value (decimal), Percent (decimal)", HasHeaders=true>
 
     type DividendsCsvType =
-        CsvProvider<Sample="Product,ProductId,Value,Value Tax,Currency", Schema="Product (string), ProductId (string), Value (decimal), Value Tax(decimal), Currency (string)", HasHeaders=true>
+        CsvProvider<Sample="Product,ISIN,Value,Value Tax,Currency", Schema="Product (string), ISIN (string), Value (decimal), Value Tax(decimal), Currency (string)", HasHeaders=true>
 
     let earningsToCsvString (earnings: Earning list) =
         let earningToRow (earning: Earning) =
             EarningsCsvType.Row(
                 earning.Date.ToString("yyy-MM-dd"),
                 earning.Product,
-                earning.ProductId,
+                earning.ISIN,
+                earning.ProdType.ToString(),
                 earning.Value,
                 earning.Percent
             )
@@ -30,7 +31,7 @@ module CsvOutput =
         let dividendToRow (dividend: Dividend) =
             DividendsCsvType.Row(
                 dividend.Product,
-                dividend.ProductId,
+                dividend.ISIN,
                 dividend.Value,
                 dividend.ValueTax,
                 dividend.Currency.ToString()

@@ -101,18 +101,40 @@ let main argv =
         if List.isEmpty sellsInPeriod then
             printfn $"No sells recorded in %d{year}, period: %A{period}."
         else
-            let periodEarnings = getSellsEarnings sellsInPeriod txns
-            printfn $"Earnings in {year}, period %A{period}:\n"
-            printfn $"%s{getEarningsCliString periodEarnings}"
+            let sellsSharesInPeriod =
+                sellsInPeriod
+                |> List.filter (fun x -> x.ProdType = Shares)
+
+            let sellsETFInPeriod =
+                sellsInPeriod
+                |> List.filter (fun x -> x.ProdType = ETF)
+
+            let earningsSharesInPeriod =
+                getSellsEarnings sellsSharesInPeriod txns
+
+            printfn $"Earnings from shares in {year}, period %A{period}:\n"
+            printfn $"%s{getEarningsCliString earningsSharesInPeriod}"
+
+            let earningsETFInPeriod = getSellsEarnings sellsETFInPeriod txns
+            printfn $"\nEarnings from ETF in {year}, period %A{period}:\n"
+            printfn $"%s{getEarningsCliString earningsETFInPeriod}"
 
             if outputPath.IsSome then
-                let csvEarnings = earningsToCsvString periodEarnings
+                let csvEarningsShares =
+                    earningsToCsvString earningsSharesInPeriod
 
-                let outputFilePath =
-                    Path.Combine(outputPath.Value, $"{year}-{period.ToString().ToLower()}-degiro-earnings.csv")
+                let csvEarningsETF = earningsToCsvString earningsETFInPeriod
 
-                File.WriteAllText(outputFilePath, csvEarnings)
-                printfn $"Earning CSV file written to {outputFilePath}\n"
+                let csvEarningsSharesPath =
+                    Path.Combine(outputPath.Value, $"{year}-{period.ToString().ToLower()}-degiro-shares-earnings.csv")
+
+                let csvEarningsETFPath =
+                    Path.Combine(outputPath.Value, $"{year}-{period.ToString().ToLower()}-degiro-etf-earnings.csv")
+
+                File.WriteAllText(csvEarningsSharesPath, csvEarningsShares)
+                File.WriteAllText(csvEarningsETFPath, csvEarningsETF)
+                printfn $"\nShares earnings CSV file written to: {csvEarningsSharesPath}"
+                printfn $"ETF earnings CSV file written to: {csvEarningsETFPath}\n"
 
         // Dividends
         let dividends = getAllDividends rows year
@@ -142,7 +164,8 @@ Tot. deposits (€): %.2f{totDeposits}"""
 #if DEBUG
         printfn $"\nElapsed time: {timer.ElapsedMilliseconds} ms"
 #endif
-    with ex ->
+    with
+    | ex ->
         eprintfn $"Error: %s{ex.Message}"
         Environment.Exit 1
 

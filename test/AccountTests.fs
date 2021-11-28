@@ -52,7 +52,7 @@ module AccountTests =
               OrderId = Guid.Parse("9f8a14c4-ad5c-4a92-99af-60a69e8b584e") }
 
         txns |> should haveLength 1
-        txns[0] |> should equal expectedTxn
+        txns[ 0 ] |> should equal expectedTxn
 
 
     [<Test>]
@@ -86,7 +86,40 @@ module AccountTests =
               OrderId = Guid.Parse("e30677c2-cf9e-4dac-8405-f2361f60e0fd") }
 
         txns |> should haveLength 1
-        txns[0] |> should equal expectedTxn
+        txns[ 0 ] |> should equal expectedTxn
+
+
+    [<Test>]
+    let ``BuildTxn with ETF`` () =
+        let realEtfDescr = [ "VANGUARD FTSE AW"; "SPDR S&P 500"; "ISHARES S&P 500"; "LYXOR ETF CAC 40" ]
+        let rndEtfDesc = realEtfDescr[Random().Next(realEtfDescr.Length)]
+        let testRows =
+            header
+            + $"""
+        08-06-2020,09:05,08-06-2020,{rndEtfDesc},CODE321,DEGIRO Transaction Fee,,EUR,-2.00,EUR,65.44,e30677c2-cf9e-4dac-8405-f2361f60e0fd
+        08-06-2020,09:05,08-06-2020,{rndEtfDesc},CODE321,Buy 2 {rndEtfDesc}@9.598 EUR (CODE321),,EUR,-19.20,EUR,67.45,e30677c2-cf9e-4dac-8405-f2361f60e0fd"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+
+        let txns =
+            Seq.map buildTxn txnsGrouped |> Seq.toList
+
+        let expectedTxn =
+            { Date = DateTime(2020, 6, 8, 9, 5, 0)
+              Type = Buy
+              Product = rndEtfDesc
+              ISIN = "CODE321"
+              ProdType = ProductType.ETF
+              Quantity = 2
+              Price = -19.20m
+              Value = 9.598m
+              ValueCurrency = Currency.EUR
+              Fees = -2.00m
+              OrderId = Guid.Parse("e30677c2-cf9e-4dac-8405-f2361f60e0fd") }
+
+        txns |> should haveLength 1
+        txns[ 0 ] |> should equal expectedTxn
 
 
     [<Test>]
@@ -127,7 +160,7 @@ module AccountTests =
               OrderId = Guid.Parse("c6aead59-29c2-40f4-8158-b92cc9b6867e") }
 
         txns |> should haveLength 1
-        txns[0] |> should equal expectedTxn
+        txns[ 0 ] |> should equal expectedTxn
 
 
     [<Test>]
@@ -210,7 +243,7 @@ module AccountTests =
               Quantity = 5
               Date = DateTime(2019, 6, 6)
               ISIN = "ABC2"
-              ProdType = ProductType.Shares
+              ProdType = ProductType.ETF
               Fees = 2.5m
               Value = 123.0m
               ValueCurrency = Currency.EUR
@@ -241,7 +274,8 @@ module AccountTests =
         let expectedEarning =
             { Date = txnSellA1.Date
               Product = txnSellA1.Product
-              ProductId = "ABC"
+              ISIN = "ABC"
+              ProdType = Shares
               Value = 105.0m
               Percent = Math.Round((105.0m / 95.0m) * 100.0m, 2) }
 
@@ -277,7 +311,8 @@ module AccountTests =
         let expectedEarning =
             { Date = DateTime(2020, 11, 18, 15, 30, 0)
               Product = "BRAND NEW NAME"
-              ProductId = "US12008C1234"
+              ISIN = "US12008C1234"
+              ProdType = Shares
               Value = (1777.82m - 980.38m)
               Percent = Math.Round(((1777.82m - 980.38m) / 980.38m) * 100.0m, 2) }
 
@@ -304,7 +339,7 @@ module AccountTests =
         let expectedDividend =
             { Year = 2020
               Product = "ACME Inc"
-              ProductId = "CODE123"
+              ISIN = "CODE123"
               Value = 10.5m
               ValueTax = -1.58m
               Currency = USD }
@@ -312,5 +347,5 @@ module AccountTests =
         let allDividends = getAllDividends rows 2020
         allDividends |> should haveLength 1
 
-        allDividends[0]
+        allDividends[ 0 ]
         |> should equal expectedDividend
