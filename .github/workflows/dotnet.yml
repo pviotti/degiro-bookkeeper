@@ -81,7 +81,7 @@ jobs:
     - name: Build release artifacts
       run: |
         dotnet publish src/Degiro.Cli/Degiro.Cli.fsproj -c Release -o dgbk-${{ env.VER }}-${{ matrix.config.id }}
-        dotnet publish src/Degiro.Cli/Degiro.Cli.fsproj -c Release -r ${{ matrix.config.rid }} --self-contained -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained true -o dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc
+        dotnet publish src/Degiro.Cli/Degiro.Cli.fsproj -c Release -r ${{ matrix.config.rid }} --self-contained -p:PublishSingleFile=true -p:PublishReadyToRun=true -o dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc
 
     - name: Zip artifacts (Linux and MacOS)
       if: matrix.config.id != 'win'
