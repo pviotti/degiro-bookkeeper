@@ -11,7 +11,7 @@ module Account =
     let txnDescriptionRegExp =
         "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD)"
 
-    let etfDescriptionMarkers = ["ETF"; "STOXX"]
+    let etfDescriptionMarkers = ["ETF"; "STOXX"; "SPDR S&P"; "ISHARES"; "EQQQ"; "VANGUARD"; "LYXOR"]
 
     [<Literal>]
     let accountStatementSampleCsv = """
