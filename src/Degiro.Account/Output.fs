@@ -60,10 +60,14 @@ module CliOutput =
         earnings |> List.iter getEarningLine
 
         let periodTotalEarnings =
-            earnings |> List.sumBy (fun x -> x.Value)
+            match earnings.Length with
+            | 0 -> 0.0m
+            | _ -> earnings |> List.sumBy (fun x -> x.Value)
 
         let periodAvgPercEarnings =
-            earnings |> List.averageBy (fun x -> x.Percent)
+            match earnings.Length with
+            | 0 -> 0.0m
+            | _ -> earnings |> List.averageBy (fun x -> x.Percent)
 
         sb.AppendLine() |> ignore
 
