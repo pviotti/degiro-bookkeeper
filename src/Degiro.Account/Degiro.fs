@@ -9,7 +9,7 @@ open FSharp.Data
 module Account =
 
     let txnDescriptionRegExp =
-        "^(Buy|Sell) (\d+) .+?(?=@)@([\d\.\d]+) (EUR|USD)"
+        "^(Buy|Sell) (\d+) .+?(?=@)@([\.,\d]+) (EUR|USD)"
 
     let etfDescriptionMarkers = ["ETF"; "STOXX"; "SPDR S&P"; "ISHARES"; "EQQQ"; "VANGUARD"; "LYXOR"]
 
@@ -84,7 +84,7 @@ module Account =
                     Regex.Match(row.Description, txnDescriptionRegExp)
 
                 (decimal matches.Groups[2].Value)
-                * (decimal matches.Groups[3].Value)
+                * (Decimal.Parse(matches.Groups[3].Value))
 
             let getTotQuantity (rows: seq<Row>) (filter: Row -> bool) =
                 rows

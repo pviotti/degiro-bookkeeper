@@ -123,6 +123,39 @@ module AccountTests =
 
 
     [<Test>]
+    let ``BuildTxn with thousands separator`` () =
+        let testRows =
+            header
+            + $"""
+        05-03-2021,15:30,05-03-2021,COSTOSO INC. CLASS A S,ABC123456,FX Credit,1.1929,USD,1154.97,USD,0.00,a7f91cfa-6058-4d77-a6b9-ebb0c61487b8
+        05-03-2021,15:30,05-03-2021,COSTOSO INC. CLASS A S,ABC123456,FX Debit,,EUR,-968.20,EUR,-965.87,a7f91cfa-6058-4d77-a6b9-ebb0c61487b8
+        05-03-2021,15:30,05-03-2021,COSTOSO INC. CLASS A S,ABC123456,DEGIRO Transaction Fee,,EUR,-0.50,EUR,2.33,a7f91cfa-6058-4d77-a6b9-ebb0c61487b8
+        05-03-2021,15:30,05-03-2021,COSTOSO INC. CLASS A S,ABC123456,"Buy 1 COSTOSO INC. CLASS A S@1,154.97 USD (ABC123456)",,USD,-1154.97,USD,-1154.96,a7f91cfa-6058-4d77-a6b9-ebb0c61487b8"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+
+        let txns =
+            Seq.map buildTxn txnsGrouped |> Seq.toList
+
+        let expectedTxn =
+            { Date = DateTime(2021, 3, 5, 15, 30, 0)
+              Type = Buy
+              Product = "COSTOSO INC. CLASS A S"
+              ISIN = "ABC123456"
+              ProdType = ProductType.Shares
+              Quantity = 1
+              Price = -968.20m
+              Value = 1154.97m
+              ValueCurrency = Currency.USD
+              Fees = -0.50m
+              OrderId = Guid.Parse("a7f91cfa-6058-4d77-a6b9-ebb0c61487b8") }
+
+        txns |> should haveLength 1
+        txns[ 0 ] |> should equal expectedTxn
+
+
+    [<Test>]
     let ``BuiltTxn with cancelled and compensated transactions`` () =
         // Sometimes, Degiro executes a Buy order and then cancel it by
         // issuing a Sell transaction of the same exact amount with the same OrderId
