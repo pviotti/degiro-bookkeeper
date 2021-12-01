@@ -1,8 +1,8 @@
 namespace Degiro
 
-open System
 open System.Text
 open FSharp.Data
+open Spectre.Console
 
 module CsvOutput =
 
@@ -108,3 +108,24 @@ module CliOutput =
         |> ignore
 
         sb.ToString()
+
+module RichCliOutput =
+
+
+    let getEarningsRichCliString (earnings: Earning list) =
+        let table =
+            Table()
+                .AddColumn(TableColumn("Date"))
+                .AddColumn(TableColumn("Product"))
+                .AddColumn(TableColumn("P/L (€)"))
+                .AddColumn(TableColumn("P/L %"))
+        table.Border <- TableBorder.Simple
+        table.Columns[2].RightAligned() |> ignore
+        table.Columns[3].RightAligned() |> ignore
+
+        earnings
+        |> List.map
+            (fun e -> table.AddRow(e.Date.ToString("yyyy-MM-dd"), e.Product, $"%7.2f{e.Value}", $"%7.1f{e.Percent}"))
+        |> ignore
+
+        AnsiConsole.Write(table)

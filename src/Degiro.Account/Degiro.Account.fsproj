@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="4.2.5" />
+    <PackageReference Include="Spectre.Console" Version="0.43.0" />
   </ItemGroup>
 
 </Project>

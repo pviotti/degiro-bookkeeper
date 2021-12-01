@@ -7,6 +7,7 @@ open Argu
 open Degiro
 open Degiro.Account
 open Degiro.CliOutput
+open Degiro.RichCliOutput
 open Degiro.CsvOutput
 
 let VERSION =
@@ -113,7 +114,8 @@ let main argv =
                 getSellsEarnings sellsSharesInPeriod txns
 
             printfn $"Earnings from shares in {year}, period %A{period}:\n"
-            printfn $"%s{getEarningsCliString earningsSharesInPeriod}"
+            getEarningsRichCliString earningsSharesInPeriod
+            //printfn $"%s{getEarningsCliString earningsSharesInPeriod}"
 
             let earningsETFInPeriod = getSellsEarnings sellsETFInPeriod txns
             printfn $"\nEarnings from ETF in {year}, period %A{period}:\n"
