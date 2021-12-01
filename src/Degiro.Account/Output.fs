@@ -50,7 +50,7 @@ module CliOutput =
         sb.AppendLine $"""%-10s{"Date"} %-40s{"Product"} %7s{"P/L (€)"} %8s{"P/L %"}"""
         |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 68 "-"}"""
+        sb.AppendLine $"""%s{String.replicate 68 "─"}"""
         |> ignore
 
         let getEarningLine (e: Earning) =
@@ -85,7 +85,7 @@ module CliOutput =
         sb.AppendLine $"""%-40s{"Product"} %7s{"Tax"} %7s{"Value"} %8s{"Currency"}"""
         |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 65 "-"}"""
+        sb.AppendLine $"""%s{String.replicate 65 "─"}"""
         |> ignore
 
         let getDividentLine (d: Dividend) =
