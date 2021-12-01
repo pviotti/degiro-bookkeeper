@@ -1,6 +1,7 @@
 namespace Degiro
 
 open System
+open System.Diagnostics
 open System.Text
 open System.Text.RegularExpressions
 
@@ -59,7 +60,9 @@ module Account =
                 allRows
                 |> Seq.filter (fun x -> Regex.IsMatch(x.Description, txnDescriptionRegExp))
 
-            assert (Seq.length descRows >= 1)
+            Trace.Assert(Seq.length descRows >= 1,
+                "This transaction could not be parsed - please report this issue on GitHub:\n" +
+                $"%A{fst txn} - %A{Seq.toList allRows}")
 
             let getTxnTypeAndCurrency (row: Row) =
                 let matches =
@@ -126,9 +129,8 @@ module Account =
                         |> Seq.map getFractionalPrice
                         |> Seq.sum
 
-                    assert (totBuyQuantity = totSellQuantity)
-                    assert (totalPriceBuys = totalPriceSells)
-                    assert (degiroFees = 0.0m)
+                    Trace.Assert(totBuyQuantity = totSellQuantity && totalPriceBuys = totalPriceSells && degiroFees = 0.0m,
+                                 $"Anomalous cancelled transaction: %A{fst txn} - %A{Seq.toList allRows}")
                     0.0m, 0.0m, 0
                 else
                     let totQuantity = getTotQuantity descRows (fun _ -> true)
@@ -168,7 +170,7 @@ module Account =
               Value = totValue
               ValueCurrency = valueCurrency
               OrderId = (Option.defaultValue Guid.Empty firstDescRow.OrderId) }
-        with ex -> failwithf $"Error: %A{Seq.last allRows} - %s{ex.Message} \n%A{ex}"
+        with ex -> failwithf $"parsing failed on transaction: %A{Seq.toList allRows}\n\n%A{ex}"
 
 
     /// Get all sell transactions for the given year and Irish tax period
@@ -201,7 +203,7 @@ module Account =
             if quantityToSell = 0 then
                 totBuyPrice
             elif List.isEmpty buys && quantityToSell <> 0 then // Should not happen
-                failwithf $"can't find buy transactions for remaining {quantityToSell} sells of %A{sellTxn}"
+                failwithf $"could not find buy transactions for remaining {quantityToSell} sells of %A{sellTxn}"
             else
                 let currBuy = List.head buys
 
