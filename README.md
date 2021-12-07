@@ -55,4 +55,14 @@ OPTIONS:
  - only outputs earnings in €
  - only supports transactions in € or USD
 
+## FAQ
+
+**Q:** *Why is my Degiro Annual Report showing numbers slightly different from the Account Statement?*
+
+> In the Annual Report we use the exchange rates of the close price of the day the document is created.
+> The Account Statement uses more accurate data, but the difference should be negligible.
+> However, please remember that this report is not an official document as Degiro is not providing tax related services.
+>
+> -- *Degiro customer support (queried via mail, December 2021)*
+
  [degiro]: https://www.degiro.ie/
