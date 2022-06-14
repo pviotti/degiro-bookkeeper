@@ -278,7 +278,7 @@ module Account =
         |> Seq.filter
             (fun x ->
                 (x.Description.Equals "Processed Flatex Withdrawal"
-                 && x.Price.Value > 0))
+                 && x.Price.Value > 0.0m))
         |> Seq.sumBy (fun x -> x.Price.Value)
 
 
@@ -288,7 +288,7 @@ module Account =
         |> Seq.filter
             (fun x ->
                 (x.Description.Equals "Processed Flatex Withdrawal"
-                 && x.Price.Value > 0
+                 && x.Price.Value > 0.0m
                  && x.Date.Year = year))
         |> Seq.sumBy (fun x -> x.Price.Value)
 
