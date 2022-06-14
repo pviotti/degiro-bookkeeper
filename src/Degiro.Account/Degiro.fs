@@ -100,7 +100,7 @@ module Account =
 
             let degiroFees =
                 allRows
-                |> Seq.filter (fun (x: Row) -> x.Description.Equals "DEGIRO Transaction Fee")
+                |> Seq.filter (fun (x: Row) -> x.Description.Equals "DEGIRO Transaction and/or third party fees")
                 |> Seq.sumBy (fun (x: Row) -> x.Price.Value)
 
             let price, totValue, totQuantity =
@@ -246,7 +246,7 @@ module Account =
         |> Seq.filter
             (fun x ->
                 x.Date.Year = year
-                && (x.Description.Equals "DEGIRO Transaction Fee"
+                && (x.Description.Equals "DEGIRO Transaction and/or third party fees"
                     || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
         |> Seq.sumBy (fun x -> x.Price.Value)
 
