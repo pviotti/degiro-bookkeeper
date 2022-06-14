@@ -272,6 +272,27 @@ module Account =
         |> Seq.sumBy (fun x -> x.Price.Value)
 
 
+    /// Get the total sum of withdrawals recorded in the Account Statement
+    let getTotalWithdrawals (rows: seq<Row>) =
+        rows
+        |> Seq.filter
+            (fun x ->
+                (x.Description.Equals "Processed Flatex Withdrawal"
+                 && x.Price.Value > 0))
+        |> Seq.sumBy (fun x -> x.Price.Value)
+
+
+    /// Get the total sum of withdrawals for a given year
+    let getTotalYearWithdrawals (rows: seq<Row>) (year: int) =
+        rows
+        |> Seq.filter
+            (fun x ->
+                (x.Description.Equals "Processed Flatex Withdrawal"
+                 && x.Price.Value > 0
+                 && x.Date.Year = year))
+        |> Seq.sumBy (fun x -> x.Price.Value)
+
+
     /// Clean a CSV string from malformed rows.
     /// Returns the clean string and
     /// a boolean stating if the input string was malformed.
