@@ -224,6 +224,38 @@ module AccountTests =
 
 
     [<Test>]
+    let ``Get total withdrawals`` () =
+        let testRows =
+            header
+            + """
+        12-05-2015,16:20,13-05-2015,,,Processed Flatex Withdrawal,,EUR,500.00,EUR,507.65,
+        12-05-2015,16:20,13-05-2015,,,flatex Withdrawal,,EUR,-5000.00,EUR,-1492.35,
+        12-05-2015,10:50,30-01-2020,ACME Inc,CODE123,FX Debit,,EUR,65.57,EUR,307.98,c6aead59-29c2-40f4-8158-b92cc9b6867e
+        12-05-2015,10:50,30-01-2020,ACME Inc,CODE123,DEGIRO Transaction and/or third party fees,,EUR,2.00,EUR,242.41,c6aead59-29c2-40f4-8158-b92cc9b6867e
+        11-05-2015,17:08,11-05-2015,,,Processed Flatex Withdrawal,,EUR,-500.00,EUR,507.65,
+        12-05-2016,16:20,13-05-2015,,,Processed Flatex Withdrawal,,EUR,1540.00,EUR,507.65,
+        12-05-2016,16:20,13-05-2015,,,flatex Withdrawal,,EUR,-1540.00,EUR,-1492.35,
+        11-05-2016,17:08,11-05-2015,,,Processed Flatex Withdrawal,,EUR,-1540.00,EUR,507.65,
+        30-01-2019,10:50,30-01-2019,,,Deposit,,EUR,1000.00,EUR,1025.87,
+        12-05-2019,16:20,13-05-2015,,,Processed Flatex Withdrawal,,EUR,1000.00,EUR,507.65,
+        12-05-2019,16:20,13-05-2015,,,flatex Withdrawal,,EUR,-1000.00,EUR,-1492.35,
+        11-05-2019,17:08,11-05-2015,,,Processed Flatex Withdrawal,,EUR,-1000.00,EUR,507.65,
+        30-06-2020,10:50,30-06-2020,,,flatex Deposit,,EUR,500.00,EUR,1051.56,"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        getTotalWithdrawals rows |> should equal (500.0 + 1540.0 + 1000.0)
+
+        getTotalYearWithdrawals rows 2015
+        |> should equal 500.0
+
+        getTotalYearWithdrawals rows 2016
+        |> should equal 1540.0
+
+        getTotalYearWithdrawals rows 2019
+        |> should equal 1000.0
+
+
+    [<Test>]
     let ``Get total fees for a year`` () =
         let testRows =
             header

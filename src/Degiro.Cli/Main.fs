@@ -154,12 +154,18 @@ let main argv =
         let yearTotFees = getTotalYearFees rows year
         let totDeposits = getTotalDeposits rows
         let totYearDeposits = getTotalYearDeposits rows year
+        let totWithdrawals = getTotalWithdrawals rows
+        let totYearWithdrawals = getTotalYearWithdrawals rows year
 
         printfn
             $"""
 Tot. Degiro fees in %d{year} (€): %.2f{yearTotFees}
+
 Tot. deposits in %d{year} (€): %.2f{totYearDeposits}
-Tot. deposits (€): %.2f{totDeposits}"""
+Tot. deposits (€): %.2f{totDeposits}
+
+Tot. withdrawals in %d{year} (€): %.2f{totYearWithdrawals}
+Tot. withdrawals (€): %.2f{totWithdrawals}"""
 
 #if DEBUG
         printfn $"\nElapsed time: {timer.ElapsedMilliseconds} ms"
