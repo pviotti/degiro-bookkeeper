@@ -47,6 +47,7 @@ OPTIONS:
    in the same folder as the input file (with `-clean.csv` suffix)
  - work out dividends in € or USD in a given year
  - output summary of deposits and withdrawals both total and per-year
+ - output and take into account stock splits
  - country-specific features:
    - Ireland: support for CGT tax periods (i.e. Initial and Later - see revenue.ie)
 

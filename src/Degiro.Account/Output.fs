@@ -47,11 +47,9 @@ module CliOutput =
     let getEarningsCliString (earnings: Earning list) =
         let sb = StringBuilder()
 
-        sb.AppendLine $"""%-10s{"Date"} %-40s{"Product"} %7s{"P/L (€)"} %8s{"P/L %"}"""
-        |> ignore
+        sb.AppendLine $"""%-10s{"Date"} %-40s{"Product"} %7s{"P/L (€)"} %8s{"P/L %"}""" |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 68 "─"}"""
-        |> ignore
+        sb.AppendLine $"""%s{String.replicate 68 "─"}""" |> ignore
 
         let getEarningLine (e: Earning) =
             sb.AppendLine $"""%s{e.Date.ToString("yyyy-MM-dd")} %-40s{e.Product} %7.2f{e.Value} %7.1f{e.Percent}%%"""
@@ -71,22 +69,17 @@ module CliOutput =
 
         sb.AppendLine() |> ignore
 
-        sb.AppendLine $"""Tot. P/L (€): %.2f{periodTotalEarnings}"""
-        |> ignore
-
-        sb.AppendLine $"""Avg %% P/L: %.2f{periodAvgPercEarnings}%%"""
-        |> ignore
+        sb.AppendLine $"""Tot. P/L (€): %.2f{periodTotalEarnings}""" |> ignore
+        sb.AppendLine $"""Avg %% P/L: %.2f{periodAvgPercEarnings}%%""" |> ignore
 
         sb.ToString()
 
     let getDividendsCliString (dividends: Dividend list) =
         let sb = StringBuilder()
 
-        sb.AppendLine $"""%-40s{"Product"} %7s{"Tax"} %7s{"Value"} %8s{"Currency"}"""
-        |> ignore
+        sb.AppendLine $"""%-40s{"Product"} %7s{"Tax"} %7s{"Value"} %8s{"Currency"}""" |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 65 "─"}"""
-        |> ignore
+        sb.AppendLine $"""%s{String.replicate 65 "─"}""" |> ignore
 
         let getDividentLine (d: Dividend) =
             sb.AppendLine $"%-40s{d.Product} %7.2f{d.ValueTax} %7.2f{d.Value} %8A{d.Currency}"
@@ -101,10 +94,24 @@ module CliOutput =
 
         sb.AppendLine() |> ignore
 
-        sb.AppendLine $"""Tot. net dividends in €: {getTotalNetDividends dividends EUR}"""
+        sb.AppendLine $"""Tot. net dividends in €: {getTotalNetDividends dividends EUR}""" |> ignore
+        sb.AppendLine $"""Tot. net dividends in $: {getTotalNetDividends dividends USD}""" |> ignore
+        sb.AppendLine $"""Tot. net dividends in Can$: {getTotalNetDividends dividends CAD}""" |> ignore
+
+        sb.ToString()
+
+    let getSplitCliString (splits: seq<StockSplit>) =
+        let sb = StringBuilder()
+
+        sb.AppendLine $"""%-10s{"Date"} %-15s{"ISIN Before"} %-15s{"ISIN After"} %-40s{"Product"} %-10s{"Multiplier"}"""
         |> ignore
 
-        sb.AppendLine $"""Tot. net dividends in $: {getTotalNetDividends dividends USD}"""
-        |> ignore
+        sb.AppendLine $"""%s{String.replicate 94 "─"}""" |> ignore
+
+        let getSplitLine (s: StockSplit) =
+            sb.AppendLine $"""%-10s{s.Date.ToString("yyyy-MM-dd")} %-15s{s.IsinBefore} %-15s{s.IsinAfter} %-40s{s.ProductAfter} %10d{s.Multiplier}"""
+            |> ignore
+
+        splits |> Seq.iter getSplitLine
 
         sb.ToString()

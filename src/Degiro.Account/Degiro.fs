@@ -10,7 +10,7 @@ open FSharp.Data
 module Account =
 
     let txnDescriptionRegExp =
-        "^(Buy|Sell) (\d+) .+?(?=@)@([\.,\d]+) (EUR|USD)"
+        "^(?:STOCK SPLIT: |)(?:ISIN CHANGE: |)(Buy|Sell) (\d+) .+?(?=@)@([\.,\d]+)[ ]*(EUR|USD|)"
 
     let etfDescriptionMarkers = ["ETF"; "STOXX"; "SPDR S&P"; "ISHARES"; "EQQQ"; "VANGUARD"; "LYXOR"]
 
@@ -31,11 +31,12 @@ module Account =
     /// Get all rows corresponding to some Degiro order, grouped by their OrderId.
     let getRowsGroupedByOrderId (rows: seq<Row>) : seq<string * seq<Row>> =
         rows
-        |> Seq.filter (fun row -> Option.isSome row.OrderId)
+        |> Seq.filter
+            (fun row -> Option.isSome row.OrderId)
         |> Seq.groupBy
             (fun row ->
                 match row.OrderId with
-                | Some (x) -> x.ToString()[0..18] // XXX because some Guids can be malformed in input csv
+                | Some (x) -> x.ToString()[0..18]       // XXX because some Guids can be malformed in input csv
                 | None -> "")
 
 
@@ -51,7 +52,7 @@ module Account =
 
     /// Build a transaction object (Txn).
     /// A transaction object (Txn) summarizes a set of rows in the Account Statement that correspond to a Degiro order.
-    let buildTxn (txn: string * seq<Row>) =
+    let buildTxn (txn: string * seq<Row>) : Txn =
         let allRows = snd txn
 
         try
@@ -71,8 +72,7 @@ module Account =
                 let txnType =
                     TxnType.FromString matches.Groups[1].Value
 
-                let valueCurrency =
-                    Currency.FromString matches.Groups[4].Value
+                let valueCurrency = Currency.FromString row.Change
 
                 txnType, valueCurrency
 
@@ -144,7 +144,7 @@ module Account =
                     let price =
                         match valueCurrency with
                         | EUR -> descRows |> Seq.sumBy (fun x -> x.Price.Value)
-                        | USD ->
+                        | USD | CAD ->
                             match txnType with
                             | Sell ->
                                 allRows
@@ -170,11 +170,13 @@ module Account =
               Value = totValue
               ValueCurrency = valueCurrency
               OrderId = (Option.defaultValue Guid.Empty firstDescRow.OrderId) }
-        with ex -> failwithf $"parsing failed on transaction: %A{Seq.toList allRows}\n\n%A{ex}"
+        with
+        | ex ->
+            failwithf $"parsing failed on transaction: %A{Seq.toList allRows}\n\n%A{ex}"
 
 
     /// Get all sell transactions for the given year and Irish tax period
-    let getSellTxnsInPeriod (txns: list<Txn>) (year: int) (period: Period) =
+    let getSellTxnsInPeriod (txns: list<Txn>) (year: int) (period: Period) : list<Txn> =
         txns
         |> List.filter (fun x -> x.Type = Sell)
         |> List.filter
@@ -186,18 +188,95 @@ module Account =
         |> List.sortByDescending (fun x -> x.Date)
 
 
-    /// For a given Sell transaction, compute its earning by
-    /// going back in time to as many Buy transactions as required to match the quantity sold
-    // FIXME: make it comply with Irish CGT FIFO rule
-    let computeEarning (txns: list<Txn>) (sellTxn: Txn) =
+    /// Return a map containing all StockSplits indexed by their ISIN after the split
+    let getSplits (rows: seq<Row>) : Map<string, StockSplit> =
+        let splitRowGroups =
+            rows
+            |> Seq.filter
+                (fun x -> x.Description.StartsWith "STOCK SPLIT:")
+            |> Seq.groupBy
+                (fun x -> x.Date.ToString() + x.Time.ToString())
+
+        let createSplit (splitRows: seq<Row>) =
+            let rowSell =
+                splitRows
+                |> Seq.filter (fun row -> row.Description.Contains "Sell")
+                |> Seq.exactlyOne
+
+            let rowBuy =
+                splitRows
+                |> Seq.filter (fun row -> row.Description.Contains "Buy")
+                |> Seq.exactlyOne
+
+            let isinBefore = rowSell.ISIN
+            let isinAfter = rowBuy.ISIN
+
+            let matchesRowSell = Regex.Match(rowSell.Description, txnDescriptionRegExp)
+            let matchesRowBuy = Regex.Match(rowBuy.Description, txnDescriptionRegExp)
+            let quantitySell = int matchesRowSell.Groups[2].Value
+            let quantityBuy = int matchesRowBuy.Groups[2].Value
+            let multiplier = quantitySell / quantityBuy
+
+            { IsinAfter = isinAfter
+              IsinBefore = isinBefore
+              Date = rowBuy.Date + rowBuy.Time
+              ProductBefore = rowSell.Product
+              ProductAfter = rowBuy.Product
+              Multiplier = multiplier }
+
+        let splits: seq<StockSplit> = splitRowGroups
+                                      |> Seq.map (fun splitGroup -> createSplit (snd splitGroup))
+
+        let folder (splitMap: Map<string, StockSplit>) (split: StockSplit) =
+            splitMap |> Map.add split.IsinAfter split
+
+        splits
+        |> Seq.fold folder Map.empty<string, StockSplit>
+
+
+    /// Get all buy transactions preceding a given sell transactions (taking into account splits)
+    let getBuyTxnsPrecedingSell (txns: list<Txn>) (splits: Map<string, StockSplit>) (sellTxn: Txn) : list<Txn> =
+
         let buysPrecedingSell =
             txns
             |> List.filter
                 (fun x ->
                     x.Type = Buy
-                    && x.ISIN = sellTxn.ISIN
-                    && x.Date < sellTxn.Date)
+                    && x.Date < sellTxn.Date
+                    && x.ISIN = sellTxn.ISIN)
             |> List.sortByDescending (fun x -> x.Date)
+
+        if splits.ContainsKey sellTxn.ISIN then
+
+            let split = splits.[sellTxn.ISIN]
+
+            let buysPrecedingSellBeforeSplit =
+                txns
+                |> List.filter
+                    (fun x ->
+                        x.Type = Buy
+                        && x.Date < sellTxn.Date
+                        && x.ISIN = split.IsinBefore)
+                |> List.map
+                    (fun x ->
+                        { x with
+                              Product = split.ProductAfter
+                              ISIN = split.IsinAfter
+                              Value = x.Value * (decimal split.Multiplier)
+                              Quantity = x.Quantity / split.Multiplier})
+
+            buysPrecedingSell @ buysPrecedingSellBeforeSplit
+            |> List.sortByDescending (fun x -> x.Date)
+        else
+            buysPrecedingSell
+
+
+    /// For a given Sell transaction, compute its earning by
+    /// going back in time to as many Buy transactions as required to match the quantity sold
+    //  FIXME: make it comply with Irish CGT FIFO rule
+    let computeEarning (txns: list<Txn>) (splits: Map<string, StockSplit>) (sellTxn: Txn) =
+
+        let buysPrecedingSell = getBuyTxnsPrecedingSell txns splits sellTxn
 
         let rec getTotBuyPrice (buys: list<Txn>) (quantityToSell: int) (totBuyPrice: decimal) =
             if quantityToSell = 0 then
@@ -226,11 +305,11 @@ module Account =
 
 
     /// Return the Earning objects for a given sequence of sells
-    let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) : list<Earning> =
+    let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) (splits: Map<string, StockSplit>): list<Earning> =
         sells
         |> List.map
             (fun sell ->
-                let earning, earningPercentage = computeEarning allTxns sell
+                let earning, earningPercentage = computeEarning allTxns splits sell
 
                 { Date = sell.Date
                   Product = sell.Product

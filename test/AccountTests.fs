@@ -344,7 +344,7 @@ module AccountTests =
               Value = 105.0m
               Percent = Math.Round((105.0m / 95.0m) * 100.0m, 2) }
 
-        getSellsEarnings [ txnSellA1 ] allTxns
+        getSellsEarnings [ txnSellA1 ] allTxns Map.empty
         |> should equal [ expectedEarning ]
 
 
@@ -384,7 +384,7 @@ module AccountTests =
         let sellTxns =
             getSellTxnsInPeriod allTnxs 2020 Period.All
 
-        getSellsEarnings sellTxns allTnxs
+        getSellsEarnings sellTxns allTnxs Map.empty
         |> should equal [ expectedEarning ]
 
 
@@ -414,3 +414,79 @@ module AccountTests =
 
         allDividends[ 0 ]
         |> should equal expectedDividend
+
+
+    [<Test>]
+    let ``Split rows are not considered transactions`` () =
+        let testRows =
+            header + """
+        06-06-2022,14:38,06-06-2022,ACME Inc NEW,CODENEW123456,STOCK SPLIT: Buy 5 ACME Inc NEW@17.5 USD (CODENEW123456),,USD,-87.50,USD,-0.00,
+        06-06-2022,14:38,06-06-2022,ACME Inc OLD,CODEOLD123456,STOCK SPLIT: Sell 50 ACME Inc OLD@1.75 USD (CODEOLD123456),,USD,87.50,USD,87.50,"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+        let txns = Seq.map buildTxn txnsGrouped
+        txns |> should be Empty
+
+
+    [<Test>]
+    let ``Get earnings of a stock that had a split`` () =
+        let testRows =
+            header + """
+        01-08-2022,16:57,01-08-2022,ACME Inc NEW,CODENEW123456,FX Debit,1.0298,USD,-89.00,USD,6.08,ab2dea5e-1459-425c-96bb-f3124b754b75
+        01-08-2022,16:57,01-08-2022,ACME Inc NEW,CODENEW123456,FX Credit,,EUR,86.43,EUR,1325.18,ab2dea5e-1459-425c-96bb-f3124b754b75
+        01-08-2022,16:57,01-08-2022,ACME Inc NEW,CODENEW123456,DEGIRO Transaction and/or third party fees,,EUR,-0.50,EUR,1238.75,ab2dea5e-1459-425c-96bb-f3124b754b75
+        01-08-2022,16:57,01-08-2022,ACME Inc NEW,CODENEW123456,Sell 5 ACME Inc NEW@17.8 USD (CODENEW123456),,USD,89.00,USD,95.08,ab2dea5e-1459-425c-96bb-f3124b754b75
+        28-07-2022,07:27,27-07-2022,ACME Inc NEW,CODENEW123456,Dividend,,USD,4.50,USD,6.56,
+        28-07-2022,07:27,27-07-2022,ACME Inc NEW,CODENEW123456,Dividend Tax,,USD,-0.68,USD,2.06,
+        06-06-2022,14:38,06-06-2022,ACME Inc NEW,CODENEW123456,STOCK SPLIT: Buy 5 ACME Inc NEW@17.5 USD (CODENEW123456),,USD,-87.50,USD,-0.00,
+        06-06-2022,14:38,06-06-2022,ACME Inc OLD,CODEOLD123456,STOCK SPLIT: Sell 50 ACME Inc OLD@1.75 USD (CODEOLD123456),,USD,87.50,USD,87.50,
+        22-06-2020,15:30,22-06-2020,ACME Inc OLD,CODEOLD123456,FX Credit,1.1215,USD,207.00,USD,0.00,7e68c77d-7441-46f0-aac6-627ad59e253b
+        22-06-2020,15:30,22-06-2020,ACME Inc OLD,CODEOLD123456,FX Debit,,EUR,-184.58,EUR,835.49,7e68c77d-7441-46f0-aac6-627ad59e253b
+        22-06-2020,15:30,22-06-2020,ACME Inc OLD,CODEOLD123456,DEGIRO Transaction and/or third party fees,,EUR,-0.50,EUR,1020.07,7e68c77d-7441-46f0-aac6-627ad59e253b
+        22-06-2020,15:30,22-06-2020,ACME Inc OLD,CODEOLD123456,DEGIRO Transaction and/or third party fees,,EUR,-0.18,EUR,1020.57,7e68c77d-7441-46f0-aac6-627ad59e253b
+        22-06-2020,15:30,22-06-2020,ACME Inc OLD,CODEOLD123456,Buy 50 ACME Inc OLD@4.14 USD (CODEOLD123456),,USD,-207.00,USD,-207.00,7e68c77d-7441-46f0-aac6-627ad59e253b"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+
+        let txns = Seq.map buildTxn txnsGrouped
+                    |> Seq.toList
+        txns |> should haveLength 2
+
+        let sellTxns =
+            getSellTxnsInPeriod txns 2022 Period.All
+        let splits = getSplits rows
+        splits |> should haveCount 1
+
+        let expectedEarning = { Date = DateTime(2022, 8, 1, 16, 57, 0)
+                                Product = "ACME Inc NEW"
+                                ISIN = "CODENEW123456"
+                                ProdType = Shares
+                                Value = (86.43m - 184.58m)
+                                Percent = Math.Round(((86.43m - 184.58m) / 184.58m) * 100.0m, 2) }
+        getSellsEarnings sellTxns txns splits
+        |> should equal [ expectedEarning ]
+
+
+    [<Test>]
+    let ``Create Splits`` () =
+        let testRows =
+            header + """
+        06-06-2022,14:38,06-06-2022,ACME Inc NEW,CODENEW123456,STOCK SPLIT: Buy 5 ACME Inc NEW@17.5 USD (CODENEW123456),,USD,-87.50,USD,-0.00,
+        06-06-2022,14:38,06-06-2022,ACME Inc OLD,CODEOLD123456,STOCK SPLIT: Sell 50 ACME Inc OLD@1.75 USD (CODEOLD123456),,USD,87.50,USD,87.50,"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let split = getSplits rows
+
+        let expectedSplitMap = Map[ ("CODENEW123456",
+            { Date = DateTime(2022, 6, 6, 14, 38, 0)
+              IsinBefore = "CODEOLD123456"
+              IsinAfter = "CODENEW123456"
+              ProductBefore = "ACME Inc OLD"
+              ProductAfter = "ACME Inc NEW"
+              Multiplier = 10 }) ]
+
+        split
+        |> should equal expectedSplitMap
+
