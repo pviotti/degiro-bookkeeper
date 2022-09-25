@@ -66,3 +66,11 @@ type Period =
     | Initial = 1
     | Later = 2
     | All = 3
+
+type StockSplit =
+    { Date: DateTime
+      IsinBefore: string
+      IsinAfter: string
+      ProductBefore: string
+      ProductAfter: string
+      Multiplier: int }

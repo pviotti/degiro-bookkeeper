@@ -95,6 +95,12 @@ let main argv =
         let txns =
             Seq.map buildTxn txnsGrouped |> Seq.toList
 
+        let splits = getSplits rows
+
+        if not (Map.isEmpty splits) then
+            printfn "🖋  The Account Statement reports the following stock splits:\n"
+            printfn $"%s{getSplitCliString splits.Values}\n"
+
         let sellsInPeriod = getSellTxnsInPeriod txns year period
 
         // Earnings
@@ -110,7 +116,7 @@ let main argv =
                 |> List.filter (fun x -> x.ProdType = ETF)
 
             let earningsSharesInPeriod =
-                getSellsEarnings sellsSharesInPeriod txns
+                getSellsEarnings sellsSharesInPeriod txns splits
 
             printfn $"Earnings from shares in {year}, period %A{period}:\n"
             printfn $"%s{getEarningsCliString earningsSharesInPeriod}"

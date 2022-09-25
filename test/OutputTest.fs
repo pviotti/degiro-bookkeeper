@@ -142,5 +142,21 @@ ACME Inc B,ABC2,142.0,0.52,EUR
         outStr |> should contain expectedStr1
         outStr |> should contain expectedStr2
 
+    [<TestCase>]
+    let ``Get splits CLI string`` () =
+        let split : StockSplit =
+            { Date = DateTime(2022, 03, 04)
+              IsinBefore = "ABC-Before"
+              IsinAfter = "ABC-After"
+              Multiplier = 3
+              ProductAfter = "ABC"
+              ProductBefore = "ABC Before" }
+
+        let outStr =
+            getSplitCliString [| split |]
+
+        outStr |> should contain "ABC-After"
+
+
     [<EntryPoint>]
     let main _ = 0
