@@ -28,6 +28,7 @@ type TxnType =
 type Currency =
     | USD
     | EUR
+    | CAD
     override this.ToString() = Utils.toString this
     static member FromString s = Utils.fromString<Currency> s
 
@@ -35,12 +36,12 @@ type Txn =
     { Date: DateTime
       Type: TxnType
       Product: string
-      ISIN: string // International Security Identification Number
+      ISIN: string          // International Security Identification Number
       ProdType: ProductType
       Quantity: int
       Fees: decimal
-      Price: decimal
-      Value: decimal
+      Price: decimal        // Total value of the transaction (always in €)
+      Value: decimal        // Unit price of the stock (in any currency as per Currency)
       ValueCurrency: Currency
       OrderId: Guid }
 
