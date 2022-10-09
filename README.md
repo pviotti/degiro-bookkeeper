@@ -1,7 +1,7 @@
 # Degiro Bookkeeper
 
 [![.NET](https://github.com/pviotti/degiro-bookkeeper/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/pviotti/degiro-bookkeeper/actions/workflows/dotnet.yml)
-[![codecov](https://codecov.io/gh/pviotti/degiro-bookkeeper/branch/master/graph/badge.svg?token=rTsBxS9b8p)](https://codecov.io/gh/pviotti/degiro-bookkeper)
+[![codecov](https://codecov.io/gh/pviotti/degiro-bookkeeper/branch/master/graph/badge.svg?token=rTsBxS9b8p)](https://codecov.io/gh/pviotti/degiro-bookkeeper)
 
 This is a simple command line tool to work out earnings and dividends figures
 for a [Degiro] account.
@@ -45,8 +45,9 @@ OPTIONS:
  - account for taxes on dividends automatically deducted by Degiro
  - process malformed input CSV (i.e. with garbled rows) and output cleaned up CSV
    in the same folder as the input file (with `-clean.csv` suffix)
- - work out dividends in €, USD or CAD in a given year
+ - work out dividends in €, $ or Can$ in a given year
  - output summary of deposits and withdrawals both total and per-year
+ - output total ADR fees for a given year in $
  - output and take into account stock splits
  - country-specific features:
    - Ireland: support for CGT tax periods (i.e. Initial and Later - see revenue.ie)

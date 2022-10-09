@@ -319,6 +319,16 @@ module Account =
                   Percent = earningPercentage })
 
 
+    /// Compute total ADR Fees (in USD)
+    let getTotalYearAdrFees (rows: seq<Row>) (year: int) =
+        rows
+        |> Seq.filter
+            (fun x ->
+                x.Date.Year = year
+                && x.Description.Contains "ADR/GDR Pass-Through Fee")
+        |> Seq.sumBy (fun x -> x.Price.Value)
+
+
     /// Compute total Degiro Fees (transactions fees and stock exchange fees)
     let getTotalYearFees (rows: seq<Row>) (year: int) =
         rows
