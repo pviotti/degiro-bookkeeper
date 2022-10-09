@@ -326,7 +326,7 @@ module Account =
             (fun x ->
                 x.Date.Year = year
                 && (x.Description.Equals "DEGIRO Transaction and/or third party fees"
-                    || x.Description.StartsWith "DEGIRO Exchange Connection Fee"))
+                    || x.Description.Contains "Exchange Connection Fee"))
         |> Seq.sumBy (fun x -> x.Price.Value)
 
 
