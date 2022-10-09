@@ -10,8 +10,7 @@ module Utils =
 
     // Create discriminated unions from string - http://fssnip.net/9l
     let fromString<'a> (s: string) =
-        match FSharpType.GetUnionCases typeof<'a>
-              |> Array.filter (fun case -> case.Name = s) with
+        match FSharpType.GetUnionCases typeof<'a> |> Array.filter (fun case -> case.Name = s) with
         | [| case |] -> FSharpValue.MakeUnion(case, [||]) :?> 'a
         | _ -> failwith (s + " not recognized as a valid parameter.")
 
@@ -22,6 +21,7 @@ type ProductType =
 type TxnType =
     | Sell
     | Buy
+
     override this.ToString() = Utils.toString this
     static member FromString s = Utils.fromString<TxnType> s
 
@@ -29,6 +29,7 @@ type Currency =
     | USD
     | EUR
     | CAD
+
     override this.ToString() = Utils.toString this
     static member FromString s = Utils.fromString<Currency> s
 
@@ -36,12 +37,12 @@ type Txn =
     { Date: DateTime
       Type: TxnType
       Product: string
-      ISIN: string          // International Security Identification Number
+      ISIN: string // International Security Identification Number
       ProdType: ProductType
       Quantity: int
       Fees: decimal
-      Price: decimal        // Total value of the transaction (always in €)
-      Value: decimal        // Unit price of the stock (in any currency as per Currency)
+      Price: decimal // Total value of the transaction (always in €)
+      Value: decimal // Unit price of the stock (in any currency as per Currency)
       ValueCurrency: Currency
       OrderId: Guid }
 

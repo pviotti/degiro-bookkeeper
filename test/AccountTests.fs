@@ -35,8 +35,7 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         let txnsGrouped = getRowsGroupedByOrderId rows
 
-        let txns =
-            Seq.map buildTxn txnsGrouped |> Seq.toList
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 
         let expectedTxn =
             { Date = DateTime(2021, 2, 16, 15, 30, 0)
@@ -52,7 +51,7 @@ module AccountTests =
               OrderId = Guid.Parse("9f8a14c4-ad5c-4a92-99af-60a69e8b584e") }
 
         txns |> should haveLength 1
-        txns[ 0 ] |> should equal expectedTxn
+        txns[0] |> should equal expectedTxn
 
 
     [<Test>]
@@ -69,8 +68,7 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         let txnsGrouped = getRowsGroupedByOrderId rows
 
-        let txns =
-            Seq.map buildTxn txnsGrouped |> Seq.toList
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 
         let expectedTxn =
             { Date = DateTime(2020, 6, 8, 9, 5, 0)
@@ -86,13 +84,16 @@ module AccountTests =
               OrderId = Guid.Parse("e30677c2-cf9e-4dac-8405-f2361f60e0fd") }
 
         txns |> should haveLength 1
-        txns[ 0 ] |> should equal expectedTxn
+        txns[0] |> should equal expectedTxn
 
 
     [<Test>]
     let ``BuildTxn with ETF`` () =
-        let realEtfDescr = [ "VANGUARD FTSE AW"; "SPDR S&P 500"; "ISHARES S&P 500"; "LYXOR ETF CAC 40" ]
+        let realEtfDescr =
+            [ "VANGUARD FTSE AW"; "SPDR S&P 500"; "ISHARES S&P 500"; "LYXOR ETF CAC 40" ]
+
         let rndEtfDesc = realEtfDescr[Random().Next(realEtfDescr.Length)]
+
         let testRows =
             header
             + $"""
@@ -102,8 +103,7 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         let txnsGrouped = getRowsGroupedByOrderId rows
 
-        let txns =
-            Seq.map buildTxn txnsGrouped |> Seq.toList
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 
         let expectedTxn =
             { Date = DateTime(2020, 6, 8, 9, 5, 0)
@@ -119,7 +119,7 @@ module AccountTests =
               OrderId = Guid.Parse("e30677c2-cf9e-4dac-8405-f2361f60e0fd") }
 
         txns |> should haveLength 1
-        txns[ 0 ] |> should equal expectedTxn
+        txns[0] |> should equal expectedTxn
 
 
     [<Test>]
@@ -135,8 +135,7 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         let txnsGrouped = getRowsGroupedByOrderId rows
 
-        let txns =
-            Seq.map buildTxn txnsGrouped |> Seq.toList
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 
         let expectedTxn =
             { Date = DateTime(2021, 3, 5, 15, 30, 0)
@@ -152,7 +151,7 @@ module AccountTests =
               OrderId = Guid.Parse("a7f91cfa-6058-4d77-a6b9-ebb0c61487b8") }
 
         txns |> should haveLength 1
-        txns[ 0 ] |> should equal expectedTxn
+        txns[0] |> should equal expectedTxn
 
 
     [<Test>]
@@ -176,8 +175,7 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         let txnsGrouped = getRowsGroupedByOrderId rows
 
-        let txns =
-            Seq.map buildTxn txnsGrouped |> Seq.toList
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 
         let expectedTxn =
             { Date = DateTime(2020, 1, 30, 9, 6, 0)
@@ -193,7 +191,7 @@ module AccountTests =
               OrderId = Guid.Parse("c6aead59-29c2-40f4-8158-b92cc9b6867e") }
 
         txns |> should haveLength 1
-        txns[ 0 ] |> should equal expectedTxn
+        txns[0] |> should equal expectedTxn
 
 
     [<Test>]
@@ -213,14 +211,11 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         getTotalDeposits rows |> should equal 2200.0
 
-        getTotalYearDeposits rows 2019
-        |> should equal 1000.0
+        getTotalYearDeposits rows 2019 |> should equal 1000.0
 
-        getTotalYearDeposits rows 2020
-        |> should equal 500.0
+        getTotalYearDeposits rows 2020 |> should equal 500.0
 
-        getTotalYearDeposits rows 2021
-        |> should equal 700.0
+        getTotalYearDeposits rows 2021 |> should equal 700.0
 
 
     [<Test>]
@@ -245,14 +240,11 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         getTotalWithdrawals rows |> should equal (500.0 + 1540.0 + 1000.0)
 
-        getTotalYearWithdrawals rows 2015
-        |> should equal 500.0
+        getTotalYearWithdrawals rows 2015 |> should equal 500.0
 
-        getTotalYearWithdrawals rows 2016
-        |> should equal 1540.0
+        getTotalYearWithdrawals rows 2016 |> should equal 1540.0
 
-        getTotalYearWithdrawals rows 2019
-        |> should equal 1000.0
+        getTotalYearWithdrawals rows 2019 |> should equal 1000.0
 
 
     [<Test>]
@@ -297,9 +289,9 @@ module AccountTests =
 
         let txnBuyA2 =
             { txnBuyA1 with
-                  Price = -55.0m
-                  Quantity = 2
-                  Date = DateTime(2019, 5, 5) }
+                Price = -55.0m
+                Quantity = 2
+                Date = DateTime(2019, 5, 5) }
 
         let txnBuyB1 =
             { Product = "Acme Inc B"
@@ -316,25 +308,18 @@ module AccountTests =
 
         let txnSellA1 =
             { txnBuyA1 with
-                  Type = Sell
-                  Price = 200.0m
-                  Quantity = 4
-                  Date = DateTime(2020, 12, 1) }
+                Type = Sell
+                Price = 200.0m
+                Quantity = 4
+                Date = DateTime(2020, 12, 1) }
 
-        let allTxns =
-            [ txnBuyA1
-              txnBuyA2
-              txnBuyB1
-              txnSellA1 ]
+        let allTxns = [ txnBuyA1; txnBuyA2; txnBuyB1; txnSellA1 ]
 
-        getSellTxnsInPeriod allTxns 2019 Period.Initial
-        |> should be Empty
+        getSellTxnsInPeriod allTxns 2019 Period.Initial |> should be Empty
 
-        getSellTxnsInPeriod allTxns 2020 Period.Initial
-        |> should be Empty
+        getSellTxnsInPeriod allTxns 2020 Period.Initial |> should be Empty
 
-        getSellTxnsInPeriod allTxns 2020 Period.Later
-        |> should equal [ txnSellA1 ]
+        getSellTxnsInPeriod allTxns 2020 Period.Later |> should equal [ txnSellA1 ]
 
         let expectedEarning =
             { Date = txnSellA1.Date
@@ -370,8 +355,7 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         let txnsGrouped = getRowsGroupedByOrderId rows
 
-        let allTnxs =
-            Seq.map buildTxn txnsGrouped |> Seq.toList
+        let allTnxs = Seq.map buildTxn txnsGrouped |> Seq.toList
 
         let expectedEarning =
             { Date = DateTime(2020, 11, 18, 15, 30, 0)
@@ -381,11 +365,9 @@ module AccountTests =
               Value = (1777.82m - 980.38m)
               Percent = Math.Round(((1777.82m - 980.38m) / 980.38m) * 100.0m, 2) }
 
-        let sellTxns =
-            getSellTxnsInPeriod allTnxs 2020 Period.All
+        let sellTxns = getSellTxnsInPeriod allTnxs 2020 Period.All
 
-        getSellsEarnings sellTxns allTnxs Map.empty
-        |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns allTnxs Map.empty |> should equal [ expectedEarning ]
 
 
     [<Test>]
@@ -412,14 +394,14 @@ module AccountTests =
         let allDividends = getAllDividends rows 2020
         allDividends |> should haveLength 1
 
-        allDividends[ 0 ]
-        |> should equal expectedDividend
+        allDividends[0] |> should equal expectedDividend
 
 
     [<Test>]
     let ``Split rows are not considered transactions`` () =
         let testRows =
-            header + """
+            header
+            + """
         06-06-2022,14:38,06-06-2022,ACME Inc NEW,CODENEW123456,STOCK SPLIT: Buy 5 ACME Inc NEW@17.5 USD (CODENEW123456),,USD,-87.50,USD,-0.00,
         06-06-2022,14:38,06-06-2022,ACME Inc OLD,CODEOLD123456,STOCK SPLIT: Sell 50 ACME Inc OLD@1.75 USD (CODEOLD123456),,USD,87.50,USD,87.50,"""
 
@@ -432,7 +414,8 @@ module AccountTests =
     [<Test>]
     let ``Get earnings of a stock that had a split`` () =
         let testRows =
-            header + """
+            header
+            + """
         01-08-2022,16:57,01-08-2022,ACME Inc NEW,CODENEW123456,FX Debit,1.0298,USD,-89.00,USD,6.08,ab2dea5e-1459-425c-96bb-f3124b754b75
         01-08-2022,16:57,01-08-2022,ACME Inc NEW,CODENEW123456,FX Credit,,EUR,86.43,EUR,1325.18,ab2dea5e-1459-425c-96bb-f3124b754b75
         01-08-2022,16:57,01-08-2022,ACME Inc NEW,CODENEW123456,DEGIRO Transaction and/or third party fees,,EUR,-0.50,EUR,1238.75,ab2dea5e-1459-425c-96bb-f3124b754b75
@@ -450,51 +433,52 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         let txnsGrouped = getRowsGroupedByOrderId rows
 
-        let txns = Seq.map buildTxn txnsGrouped
-                    |> Seq.toList
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
         txns |> should haveLength 2
 
-        let sellTxns =
-            getSellTxnsInPeriod txns 2022 Period.All
+        let sellTxns = getSellTxnsInPeriod txns 2022 Period.All
         let splits = getSplits rows
         splits |> should haveCount 1
 
-        let expectedEarning = { Date = DateTime(2022, 8, 1, 16, 57, 0)
-                                Product = "ACME Inc NEW"
-                                ISIN = "CODENEW123456"
-                                ProdType = Shares
-                                Value = (86.43m - 184.58m)
-                                Percent = Math.Round(((86.43m - 184.58m) / 184.58m) * 100.0m, 2) }
-        getSellsEarnings sellTxns txns splits
-        |> should equal [ expectedEarning ]
+        let expectedEarning =
+            { Date = DateTime(2022, 8, 1, 16, 57, 0)
+              Product = "ACME Inc NEW"
+              ISIN = "CODENEW123456"
+              ProdType = Shares
+              Value = (86.43m - 184.58m)
+              Percent = Math.Round(((86.43m - 184.58m) / 184.58m) * 100.0m, 2) }
+
+        getSellsEarnings sellTxns txns splits |> should equal [ expectedEarning ]
 
 
     [<Test>]
     let ``Create Splits`` () =
         let testRows =
-            header + """
+            header
+            + """
         06-06-2022,14:38,06-06-2022,ACME Inc NEW,CODENEW123456,STOCK SPLIT: Buy 5 ACME Inc NEW@17.5 USD (CODENEW123456),,USD,-87.50,USD,-0.00,
         06-06-2022,14:38,06-06-2022,ACME Inc OLD,CODEOLD123456,STOCK SPLIT: Sell 50 ACME Inc OLD@1.75 USD (CODEOLD123456),,USD,87.50,USD,87.50,"""
 
         let rows = AccountCsv.Parse(testRows).Rows
         let split = getSplits rows
 
-        let expectedSplitMap = Map[ ("CODENEW123456",
-            { Date = DateTime(2022, 6, 6, 14, 38, 0)
-              IsinBefore = "CODEOLD123456"
-              IsinAfter = "CODENEW123456"
-              ProductBefore = "ACME Inc OLD"
-              ProductAfter = "ACME Inc NEW"
-              Multiplier = 10 }) ]
+        let expectedSplitMap =
+            Map[("CODENEW123456",
+                 { Date = DateTime(2022, 6, 6, 14, 38, 0)
+                   IsinBefore = "CODEOLD123456"
+                   IsinAfter = "CODENEW123456"
+                   ProductBefore = "ACME Inc OLD"
+                   ProductAfter = "ACME Inc NEW"
+                   Multiplier = 10 })]
 
-        split
-        |> should equal expectedSplitMap
+        split |> should equal expectedSplitMap
 
 
     [<Test>]
     let ``Get total ADR fees for a year`` () =
         let testRows =
-            header + """
+            header
+            + """
         22-08-2022,10:17,03-06-2021,Contoso Inc.,US012344A1088,ADR/GDR Pass-Through Fee,,USD,0.60,USD,0.60,
         16-08-2022,14:12,09-08-2022,ACME Inc,US6541232043,ADR/GDR Pass-Through Fee,,USD,-0.10,USD,3.02,
         16-08-2022,14:10,09-08-2022,ACME Inc,US6541232043,ADR/GDR Pass-Through Fee,,USD,0.19,USD,4.18,
@@ -504,5 +488,4 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         let totAdrFees = getTotalYearAdrFees rows 2022
 
-        Math.Round(totAdrFees, 2)
-        |> should equal 0.6
+        Math.Round(totAdrFees, 2) |> should equal 0.6

@@ -47,7 +47,8 @@ module CliOutput =
     let getEarningsCliString (earnings: Earning list) =
         let sb = StringBuilder()
 
-        sb.AppendLine $"""%-10s{"Date"} %-40s{"Product"} %7s{"P/L (€)"} %8s{"P/L %"}""" |> ignore
+        sb.AppendLine $"""%-10s{"Date"} %-40s{"Product"} %7s{"P/L (€)"} %8s{"P/L %"}"""
+        |> ignore
 
         sb.AppendLine $"""%s{String.replicate 68 "─"}""" |> ignore
 
@@ -77,7 +78,8 @@ module CliOutput =
     let getDividendsCliString (dividends: Dividend list) =
         let sb = StringBuilder()
 
-        sb.AppendLine $"""%-40s{"Product"} %7s{"Tax"} %7s{"Value"} %8s{"Currency"}""" |> ignore
+        sb.AppendLine $"""%-40s{"Product"} %7s{"Tax"} %7s{"Value"} %8s{"Currency"}"""
+        |> ignore
 
         sb.AppendLine $"""%s{String.replicate 65 "─"}""" |> ignore
 
@@ -94,9 +96,14 @@ module CliOutput =
 
         sb.AppendLine() |> ignore
 
-        sb.AppendLine $"""Tot. net dividends in €: {getTotalNetDividends dividends EUR}""" |> ignore
-        sb.AppendLine $"""Tot. net dividends in $: {getTotalNetDividends dividends USD}""" |> ignore
-        sb.AppendLine $"""Tot. net dividends in Can$: {getTotalNetDividends dividends CAD}""" |> ignore
+        sb.AppendLine $"""Tot. net dividends in €: {getTotalNetDividends dividends EUR}"""
+        |> ignore
+
+        sb.AppendLine $"""Tot. net dividends in $: {getTotalNetDividends dividends USD}"""
+        |> ignore
+
+        sb.AppendLine $"""Tot. net dividends in Can$: {getTotalNetDividends dividends CAD}"""
+        |> ignore
 
         sb.ToString()
 
@@ -109,7 +116,8 @@ module CliOutput =
         sb.AppendLine $"""%s{String.replicate 94 "─"}""" |> ignore
 
         let getSplitLine (s: StockSplit) =
-            sb.AppendLine $"""%-10s{s.Date.ToString("yyyy-MM-dd")} %-15s{s.IsinBefore} %-15s{s.IsinAfter} %-40s{s.ProductAfter} %10d{s.Multiplier}"""
+            sb.AppendLine
+                $"""%-10s{s.Date.ToString("yyyy-MM-dd")} %-15s{s.IsinBefore} %-15s{s.IsinAfter} %-40s{s.ProductAfter} %10d{s.Multiplier}"""
             |> ignore
 
         splits |> Seq.iter getSplitLine
