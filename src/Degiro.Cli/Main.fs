@@ -118,11 +118,11 @@ let main argv =
             let earningsSharesInPeriod =
                 getSellsEarnings sellsSharesInPeriod txns splits
 
-            printfn $"Earnings from shares in {year}, period %A{period}:\n"
+            printfn $"💰 Earnings from shares in {year}, period %A{period}:\n"
             printfn $"%s{getEarningsCliString earningsSharesInPeriod}"
 
-            let earningsETFInPeriod = getSellsEarnings sellsETFInPeriod txns
-            printfn $"\nEarnings from ETF in {year}, period %A{period}:\n"
+            let earningsETFInPeriod = getSellsEarnings sellsETFInPeriod txns splits
+            printfn $"\n💰 Earnings from ETF in {year}, period %A{period}:\n"
             printfn $"%s{getEarningsCliString earningsETFInPeriod}"
 
             if outputPath.IsSome then
@@ -144,7 +144,7 @@ let main argv =
 
         // Dividends
         let dividends = getAllDividends rows year
-        printfn $"\nDividends in {year}:\n"
+        printfn $"\n💰 Dividends in {year}:\n"
         printfn $"%s{getDividendsCliString dividends}"
 
         if outputPath.IsSome then
@@ -165,20 +165,20 @@ let main argv =
 
         printfn
             $"""
-Tot. Degiro fees in %d{year} (€): %.2f{yearTotFees}
+💸 Tot. Degiro fees in %d{year} (€): %.2f{yearTotFees}
 
-Tot. deposits in %d{year} (€): %.2f{totYearDeposits}
-Tot. deposits (€): %.2f{totDeposits}
+🏧 Tot. deposits in %d{year} (€): %.2f{totYearDeposits}
+🏧 Tot. withdrawals in %d{year} (€): %.2f{totYearWithdrawals}
 
-Tot. withdrawals in %d{year} (€): %.2f{totYearWithdrawals}
-Tot. withdrawals (€): %.2f{totWithdrawals}"""
+🏧 Tot. deposits (€): %.2f{totDeposits}
+🏧 Tot. withdrawals (€): %.2f{totWithdrawals}"""
 
 #if DEBUG
         printfn $"\nElapsed time: {timer.ElapsedMilliseconds} ms"
 #endif
     with
     | ex ->
-        eprintfn $"Error: %s{ex.Message}"
+        eprintfn $"Error: %s{ex.Message}\n%s{ex.StackTrace}"
         Environment.Exit 1
 
     0
