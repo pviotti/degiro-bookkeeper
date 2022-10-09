@@ -45,7 +45,7 @@ OPTIONS:
  - account for taxes on dividends automatically deducted by Degiro
  - process malformed input CSV (i.e. with garbled rows) and output cleaned up CSV
    in the same folder as the input file (with `-clean.csv` suffix)
- - work out dividends in € or USD in a given year
+ - work out dividends in €, USD or CAD in a given year
  - output summary of deposits and withdrawals both total and per-year
  - output and take into account stock splits
  - country-specific features:
