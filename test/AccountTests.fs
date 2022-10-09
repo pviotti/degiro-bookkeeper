@@ -490,3 +490,19 @@ module AccountTests =
         split
         |> should equal expectedSplitMap
 
+
+    [<Test>]
+    let ``Get total ADR fees for a year`` () =
+        let testRows =
+            header + """
+        22-08-2022,10:17,03-06-2021,Contoso Inc.,US012344A1088,ADR/GDR Pass-Through Fee,,USD,0.60,USD,0.60,
+        16-08-2022,14:12,09-08-2022,ACME Inc,US6541232043,ADR/GDR Pass-Through Fee,,USD,-0.10,USD,3.02,
+        16-08-2022,14:10,09-08-2022,ACME Inc,US6541232043,ADR/GDR Pass-Through Fee,,USD,0.19,USD,4.18,
+        15-08-2022,08:33,09-08-2022,ACME Inc,US6541232043,ADR/GDR Pass-Through Fee,,USD,0.10,USD,0.97,
+        15-08-2022,08:33,09-08-2022,ACME Inc,US6541232043,ADR/GDR Pass-Through Fee,,USD,-0.19,USD,-0.19,"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let totAdrFees = getTotalYearAdrFees rows 2022
+
+        Math.Round(totAdrFees, 2)
+        |> should equal 0.6

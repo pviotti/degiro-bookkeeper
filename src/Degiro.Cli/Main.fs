@@ -157,6 +157,7 @@ let main argv =
             printfn $"Dividends CSV file written to {outputFilePath}\n"
 
         // Total deposits and fees
+        let yearTotAdrFees = getTotalYearAdrFees rows year
         let yearTotFees = getTotalYearFees rows year
         let totDeposits = getTotalDeposits rows
         let totYearDeposits = getTotalYearDeposits rows year
@@ -165,6 +166,7 @@ let main argv =
 
         printfn
             $"""
+💸 Tot. ADR fees in %d{year} ($): %.2f{yearTotAdrFees}
 💸 Tot. Degiro fees in %d{year} (€): %.2f{yearTotFees}
 
 🏧 Tot. deposits in %d{year} (€): %.2f{totYearDeposits}
