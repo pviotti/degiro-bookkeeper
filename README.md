@@ -67,4 +67,4 @@ OPTIONS:
 >
 > -- *Degiro customer support (queried via mail, December 2021)*
 
- [degiro]: https://www.degiro.ie/
+ [degiro]: https://www.degiro.ie/member-get-member/start-trading?id=7883544C&utm_source=mgm
