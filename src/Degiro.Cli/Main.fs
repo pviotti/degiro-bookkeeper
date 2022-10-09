@@ -9,11 +9,7 @@ open Degiro.Account
 open Degiro.CliOutput
 open Degiro.CsvOutput
 
-let VERSION =
-    Assembly
-        .GetExecutingAssembly()
-        .GetName()
-        .Version.ToString()
+let VERSION = Assembly.GetExecutingAssembly().GetName().Version.ToString()
 
 let PROGRAM_NAME = AppDomain.CurrentDomain.FriendlyName
 
@@ -76,9 +72,7 @@ let main argv =
         let cleanCsv, isMalformed = cleanCsv originalCsvContent
 
         if isMalformed then
-            let newFilePath =
-                csvFilePath[..csvFilePath.Length - 5]
-                + "-clean.csv"
+            let newFilePath = csvFilePath[.. csvFilePath.Length - 5] + "-clean.csv"
 
             File.WriteAllText(newFilePath, cleanCsv)
             printfn $"Cleaned CSV file has been written to {newFilePath}.\n"
@@ -92,8 +86,7 @@ let main argv =
 
         let txnsGrouped = getRowsGroupedByOrderId rows
 
-        let txns =
-            Seq.map buildTxn txnsGrouped |> Seq.toList
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 
         let splits = getSplits rows
 
@@ -108,15 +101,11 @@ let main argv =
             printfn $"No sells recorded in %d{year}, period: %A{period}."
         else
             let sellsSharesInPeriod =
-                sellsInPeriod
-                |> List.filter (fun x -> x.ProdType = Shares)
+                sellsInPeriod |> List.filter (fun x -> x.ProdType = Shares)
 
-            let sellsETFInPeriod =
-                sellsInPeriod
-                |> List.filter (fun x -> x.ProdType = ETF)
+            let sellsETFInPeriod = sellsInPeriod |> List.filter (fun x -> x.ProdType = ETF)
 
-            let earningsSharesInPeriod =
-                getSellsEarnings sellsSharesInPeriod txns splits
+            let earningsSharesInPeriod = getSellsEarnings sellsSharesInPeriod txns splits
 
             printfn $"💰 Earnings from shares in {year}, period %A{period}:\n"
             printfn $"%s{getEarningsCliString earningsSharesInPeriod}"
@@ -126,8 +115,7 @@ let main argv =
             printfn $"%s{getEarningsCliString earningsETFInPeriod}"
 
             if outputPath.IsSome then
-                let csvEarningsShares =
-                    earningsToCsvString earningsSharesInPeriod
+                let csvEarningsShares = earningsToCsvString earningsSharesInPeriod
 
                 let csvEarningsETF = earningsToCsvString earningsETFInPeriod
 
@@ -150,8 +138,7 @@ let main argv =
         if outputPath.IsSome then
             let csvDividends = dividendsToCsvString dividends
 
-            let outputFilePath =
-                Path.Combine(outputPath.Value, $"{year}-degiro-dividends.csv")
+            let outputFilePath = Path.Combine(outputPath.Value, $"{year}-degiro-dividends.csv")
 
             File.WriteAllText(outputFilePath, csvDividends)
             printfn $"Dividends CSV file written to {outputFilePath}\n"
@@ -178,8 +165,7 @@ let main argv =
 #if DEBUG
         printfn $"\nElapsed time: {timer.ElapsedMilliseconds} ms"
 #endif
-    with
-    | ex ->
+    with ex ->
         eprintfn $"Error: %s{ex.Message}\n%s{ex.StackTrace}"
         Environment.Exit 1
 
