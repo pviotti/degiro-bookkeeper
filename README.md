@@ -2,6 +2,7 @@
 
 [![.NET](https://github.com/pviotti/degiro-bookkeeper/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/pviotti/degiro-bookkeeper/actions/workflows/dotnet.yml)
 [![codecov](https://codecov.io/gh/pviotti/degiro-bookkeeper/branch/master/graph/badge.svg?token=rTsBxS9b8p)](https://codecov.io/gh/pviotti/degiro-bookkeeper)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/paypalme/paoloviotti/2)
 
 This is a simple command line tool to work out earnings and dividends figures
 for a [Degiro] account.
