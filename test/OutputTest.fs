@@ -129,8 +129,8 @@ ACME Inc B,ABC2,142.0,0.52,EUR
         outStr |> should contain expectedStr2
 
     [<TestCase>]
-    let ``Get splits CLI string`` () =
-        let split: StockSplit =
+    let ``Get stock change CLI string`` () =
+        let stockChange: StockChange =
             { Date = DateTime(2022, 03, 04)
               IsinBefore = "ABC-Before"
               IsinAfter = "ABC-After"
@@ -138,7 +138,7 @@ ACME Inc B,ABC2,142.0,0.52,EUR
               ProductAfter = "ABC"
               ProductBefore = "ABC Before" }
 
-        let outStr = getSplitCliString [| split |]
+        let outStr = getStockChangesCliString [| stockChange |]
 
         outStr |> should contain "ABC-After"
 

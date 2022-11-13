@@ -69,7 +69,8 @@ type Period =
     | Later = 2
     | All = 3
 
-type StockSplit =
+/// Models stock splits, ISIN or name changes
+type StockChange =
     { Date: DateTime
       IsinBefore: string
       IsinAfter: string

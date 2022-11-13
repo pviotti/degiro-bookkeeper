@@ -88,11 +88,11 @@ let main argv =
 
         let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 
-        let splits = getSplits rows
+        let stockChanges = getStockChanges rows
 
-        if not (Map.isEmpty splits) then
-            printfn "🖋  The Account Statement reports the following stock splits:\n"
-            printfn $"%s{getSplitCliString splits.Values}\n"
+        if not (Map.isEmpty stockChanges) then
+            printfn "🖋  The Account Statement reports the following stock splits, ISIN or product name changes:\n"
+            printfn $"%s{getStockChangesCliString stockChanges.Values}\n"
 
         let sellsInPeriod = getSellTxnsInPeriod txns year period
 
@@ -105,12 +105,12 @@ let main argv =
 
             let sellsETFInPeriod = sellsInPeriod |> List.filter (fun x -> x.ProdType = ETF)
 
-            let earningsSharesInPeriod = getSellsEarnings sellsSharesInPeriod txns splits
+            let earningsSharesInPeriod = getSellsEarnings sellsSharesInPeriod txns stockChanges
 
             printfn $"💰 Earnings from shares in {year}, period %A{period}:\n"
             printfn $"%s{getEarningsCliString earningsSharesInPeriod}"
 
-            let earningsETFInPeriod = getSellsEarnings sellsETFInPeriod txns splits
+            let earningsETFInPeriod = getSellsEarnings sellsETFInPeriod txns stockChanges
             printfn $"\n💰 Earnings from ETF in {year}, period %A{period}:\n"
             printfn $"%s{getEarningsCliString earningsETFInPeriod}"
 

@@ -437,7 +437,7 @@ module AccountTests =
         txns |> should haveLength 2
 
         let sellTxns = getSellTxnsInPeriod txns 2022 Period.All
-        let splits = getSplits rows
+        let splits = getStockChanges rows
         splits |> should haveCount 1
 
         let expectedEarning =
@@ -452,7 +452,7 @@ module AccountTests =
 
 
     [<Test>]
-    let ``Create Splits`` () =
+    let ``Create StockChange`` () =
         let testRows =
             header
             + """
@@ -460,9 +460,9 @@ module AccountTests =
         06-06-2022,14:38,06-06-2022,ACME Inc OLD,CODEOLD123456,STOCK SPLIT: Sell 50 ACME Inc OLD@1.75 USD (CODEOLD123456),,USD,87.50,USD,87.50,"""
 
         let rows = AccountCsv.Parse(testRows).Rows
-        let split = getSplits rows
+        let split = getStockChanges rows
 
-        let expectedSplitMap =
+        let expectedStockChangeMap =
             Map[("CODENEW123456",
                  { Date = DateTime(2022, 6, 6, 14, 38, 0)
                    IsinBefore = "CODEOLD123456"
@@ -471,7 +471,7 @@ module AccountTests =
                    ProductAfter = "ACME Inc NEW"
                    Multiplier = 10 })]
 
-        split |> should equal expectedSplitMap
+        split |> should equal expectedStockChangeMap
 
 
     [<Test>]

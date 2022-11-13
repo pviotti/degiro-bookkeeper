@@ -13,7 +13,7 @@ module Account =
         "^(?:STOCK SPLIT: |)(?:ISIN CHANGE: |)(Buy|Sell) (\d+) .+?(?=@)@([\.,\d]+)[ ]*(EUR|USD|)"
 
     let etfDescriptionMarkers =
-        [ "ETF"; "STOXX"; "SPDR S&P"; "ISHARES"; "EQQQ"; "VANGUARD"; "LYXOR" ]
+        [ " ETF"; "STOXX"; "SPDR S&P"; "ISHARES"; "EQQQ"; "VANGUARD"; "LYXOR" ]
 
     [<Literal>]
     let accountStatementSampleCsv =
@@ -177,21 +177,22 @@ module Account =
         |> List.sortByDescending (fun x -> x.Date)
 
 
-    /// Return a map containing all StockSplits indexed by their ISIN after the split
-    let getSplits (rows: seq<Row>) : Map<string, StockSplit> =
-        let splitRowGroups =
+    /// Return a map containing all StockChange indexed by their ISIN after the split
+    let getStockChanges (rows: seq<Row>) : Map<string, StockChange> =
+        let changeRowGroups =
             rows
-            |> Seq.filter (fun x -> x.Description.StartsWith "STOCK SPLIT:")
+            |> Seq.filter (fun x -> x.Description.StartsWith "STOCK SPLIT:" ||
+                                        x.Description.StartsWith "ISIN CHANGE:")
             |> Seq.groupBy (fun x -> x.Date.ToString() + x.Time.ToString())
 
-        let createSplit (splitRows: seq<Row>) =
+        let createStockChange (changeRows: seq<Row>) =
             let rowSell =
-                splitRows
+                changeRows
                 |> Seq.filter (fun row -> row.Description.Contains "Sell")
                 |> Seq.exactlyOne
 
             let rowBuy =
-                splitRows
+                changeRows
                 |> Seq.filter (fun row -> row.Description.Contains "Buy")
                 |> Seq.exactlyOne
 
@@ -211,38 +212,38 @@ module Account =
               ProductAfter = rowBuy.Product
               Multiplier = multiplier }
 
-        let splits: seq<StockSplit> =
-            splitRowGroups |> Seq.map (fun splitGroup -> createSplit (snd splitGroup))
+        let changes: seq<StockChange> =
+            changeRowGroups |> Seq.map (fun changeGroup -> createStockChange (snd changeGroup))
 
-        let folder (splitMap: Map<string, StockSplit>) (split: StockSplit) =
-            splitMap |> Map.add split.IsinAfter split
+        let folder (changeMap: Map<string, StockChange>) (change: StockChange) =
+            changeMap |> Map.add change.IsinAfter change
 
-        splits |> Seq.fold folder Map.empty<string, StockSplit>
+        changes |> Seq.fold folder Map.empty<string, StockChange>
 
 
-    /// Get all buy transactions preceding a given sell transactions (taking into account splits)
-    let getBuyTxnsPrecedingSell (txns: list<Txn>) (splits: Map<string, StockSplit>) (sellTxn: Txn) : list<Txn> =
+    /// Get all buy transactions preceding a given sell transactions (taking into account stock changes)
+    let getBuyTxnsPrecedingSell (txns: list<Txn>) (stockChanges: Map<string, StockChange>) (sellTxn: Txn) : list<Txn> =
 
         let buysPrecedingSell =
             txns
             |> List.filter (fun x -> x.Type = Buy && x.Date < sellTxn.Date && x.ISIN = sellTxn.ISIN)
             |> List.sortByDescending (fun x -> x.Date)
 
-        if splits.ContainsKey sellTxn.ISIN then
+        if stockChanges.ContainsKey sellTxn.ISIN then
 
-            let split = splits.[sellTxn.ISIN]
+            let stockChange = stockChanges.[sellTxn.ISIN]
 
-            let buysPrecedingSellBeforeSplit =
+            let buysPrecedingSellBeforeStockChange =
                 txns
-                |> List.filter (fun x -> x.Type = Buy && x.Date < sellTxn.Date && x.ISIN = split.IsinBefore)
+                |> List.filter (fun x -> x.Type = Buy && x.Date < sellTxn.Date && x.ISIN = stockChange.IsinBefore)
                 |> List.map (fun x ->
                     { x with
-                        Product = split.ProductAfter
-                        ISIN = split.IsinAfter
-                        Value = x.Value * (decimal split.Multiplier)
-                        Quantity = x.Quantity / split.Multiplier })
+                        Product = stockChange.ProductAfter
+                        ISIN = stockChange.IsinAfter
+                        Value = x.Value * (decimal stockChange.Multiplier)
+                        Quantity = x.Quantity / stockChange.Multiplier })
 
-            buysPrecedingSell @ buysPrecedingSellBeforeSplit
+            buysPrecedingSell @ buysPrecedingSellBeforeStockChange
             |> List.sortByDescending (fun x -> x.Date)
         else
             buysPrecedingSell
@@ -251,9 +252,9 @@ module Account =
     /// For a given Sell transaction, compute its earning by
     /// going back in time to as many Buy transactions as required to match the quantity sold
     //  FIXME: make it comply with Irish CGT FIFO rule
-    let computeEarning (txns: list<Txn>) (splits: Map<string, StockSplit>) (sellTxn: Txn) =
+    let computeEarning (txns: list<Txn>) (stockChanges: Map<string, StockChange>) (sellTxn: Txn) =
 
-        let buysPrecedingSell = getBuyTxnsPrecedingSell txns splits sellTxn
+        let buysPrecedingSell = getBuyTxnsPrecedingSell txns stockChanges sellTxn
 
         let rec getTotBuyPrice (buys: list<Txn>) (quantityToSell: int) (totBuyPrice: decimal) =
             if quantityToSell = 0 then
@@ -280,10 +281,10 @@ module Account =
 
 
     /// Return the Earning objects for a given sequence of sells
-    let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) (splits: Map<string, StockSplit>) : list<Earning> =
+    let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) (stockChanges: Map<string, StockChange>) : list<Earning> =
         sells
         |> List.map (fun sell ->
-            let earning, earningPercentage = computeEarning allTxns splits sell
+            let earning, earningPercentage = computeEarning allTxns stockChanges sell
 
             { Date = sell.Date
               Product = sell.Product
