@@ -90,7 +90,10 @@ module AccountTests =
     [<Test>]
     let ``BuildTxn with ETF`` () =
         let realEtfDescr =
-            [ "VANGUARD FTSE AW"; "SPDR S&P 500"; "ISHARES S&P 500"; "LYXOR ETF CAC 40" ]
+            [ "VANGUARD FTSE AW"
+              "SPDR S&P 500"
+              "ISHARES S&P 500"
+              "LYXOR ETF CAC 40" ]
 
         let rndEtfDesc = realEtfDescr[Random().Next(realEtfDescr.Length)]
 
@@ -211,11 +214,14 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         getTotalDeposits rows |> should equal 2200.0
 
-        getTotalYearDeposits rows 2019 |> should equal 1000.0
+        getTotalYearDeposits rows 2019
+        |> should equal 1000.0
 
-        getTotalYearDeposits rows 2020 |> should equal 500.0
+        getTotalYearDeposits rows 2020
+        |> should equal 500.0
 
-        getTotalYearDeposits rows 2021 |> should equal 700.0
+        getTotalYearDeposits rows 2021
+        |> should equal 700.0
 
 
     [<Test>]
@@ -238,13 +244,18 @@ module AccountTests =
         30-06-2020,10:50,30-06-2020,,,flatex Deposit,,EUR,500.00,EUR,1051.56,"""
 
         let rows = AccountCsv.Parse(testRows).Rows
-        getTotalWithdrawals rows |> should equal (500.0 + 1540.0 + 1000.0)
 
-        getTotalYearWithdrawals rows 2015 |> should equal 500.0
+        getTotalWithdrawals rows
+        |> should equal (500.0 + 1540.0 + 1000.0)
 
-        getTotalYearWithdrawals rows 2016 |> should equal 1540.0
+        getTotalYearWithdrawals rows 2015
+        |> should equal 500.0
 
-        getTotalYearWithdrawals rows 2019 |> should equal 1000.0
+        getTotalYearWithdrawals rows 2016
+        |> should equal 1540.0
+
+        getTotalYearWithdrawals rows 2019
+        |> should equal 1000.0
 
 
     [<Test>]
@@ -313,13 +324,20 @@ module AccountTests =
                 Quantity = 4
                 Date = DateTime(2020, 12, 1) }
 
-        let allTxns = [ txnBuyA1; txnBuyA2; txnBuyB1; txnSellA1 ]
+        let allTxns =
+            [ txnBuyA1
+              txnBuyA2
+              txnBuyB1
+              txnSellA1 ]
 
-        getSellTxnsInPeriod allTxns 2019 Period.Initial |> should be Empty
+        getSellTxnsInPeriod allTxns 2019 Period.Initial
+        |> should be Empty
 
-        getSellTxnsInPeriod allTxns 2020 Period.Initial |> should be Empty
+        getSellTxnsInPeriod allTxns 2020 Period.Initial
+        |> should be Empty
 
-        getSellTxnsInPeriod allTxns 2020 Period.Later |> should equal [ txnSellA1 ]
+        getSellTxnsInPeriod allTxns 2020 Period.Later
+        |> should equal [ txnSellA1 ]
 
         let expectedEarning =
             { Date = txnSellA1.Date
@@ -367,7 +385,8 @@ module AccountTests =
 
         let sellTxns = getSellTxnsInPeriod allTnxs 2020 Period.All
 
-        getSellsEarnings sellTxns allTnxs Map.empty |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns allTnxs Map.empty
+        |> should equal [ expectedEarning ]
 
 
     [<Test>]
@@ -412,6 +431,20 @@ module AccountTests =
 
 
     [<Test>]
+    let ``ISIN change rows are not considered transactions`` () =
+        let testRows =
+            header
+            + """
+        03-10-2022,07:22,03-10-2022,ACME NEW NAME,CODENEW123456,ISIN CHANGE: Buy 7 ACME NEW NAME@29.52 USD (CODENEW123456),,USD,-206.64,USD,3.00,
+        03-10-2022,07:22,03-10-2022,ACME OLD NAME,CODEOLD123456,ISIN CHANGE: Sell 7 ACME OLD NAME@29.52 USD (CODEOLD123456),,USD,206.64,USD,209.64,"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+        let txns = Seq.map buildTxn txnsGrouped
+        txns |> should be Empty
+
+
+    [<Test>]
     let ``Get earnings of a stock that had a split`` () =
         let testRows =
             header
@@ -437,7 +470,7 @@ module AccountTests =
         txns |> should haveLength 2
 
         let sellTxns = getSellTxnsInPeriod txns 2022 Period.All
-        let splits = getSplits rows
+        let splits = getStockChanges rows
         splits |> should haveCount 1
 
         let expectedEarning =
@@ -448,11 +481,50 @@ module AccountTests =
               Value = (86.43m - 184.58m)
               Percent = Math.Round(((86.43m - 184.58m) / 184.58m) * 100.0m, 2) }
 
-        getSellsEarnings sellTxns txns splits |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns txns splits
+        |> should equal [ expectedEarning ]
 
 
     [<Test>]
-    let ``Create Splits`` () =
+    let ``Get earnings of a stock that had an ISIN change`` () =
+        let testRows =
+            header
+            + """
+        17-10-2022,17:01,17-10-2022,ACME NEW NAME,CODENEW123456,FX Debit,0.9842,USD,-225.54,USD,0.00,73afdd08-1cb2-44df-9eeb-76fa0bea7389
+        17-10-2022,17:01,17-10-2022,ACME NEW NAME,CODENEW123456,FX Credit,,EUR,229.17,EUR,1908.62,73afdd08-1cb2-44df-9eeb-76fa0bea7389
+        17-10-2022,17:01,17-10-2022,ACME NEW NAME,CODENEW123456,DEGIRO Transaction and/or third party fees,,EUR,-1.00,EUR,1679.45,73afdd08-1cb2-44df-9eeb-76fa0bea7389
+        17-10-2022,17:01,17-10-2022,ACME NEW NAME,CODENEW123456,Sell 7 ACME NEW NAME@32.22 USD (CODENEW123456),,USD,225.54,USD,225.54,73afdd08-1cb2-44df-9eeb-76fa0bea7389
+        03-10-2022,07:22,03-10-2022,ACME NEW NAME,CODENEW123456,ISIN CHANGE: Buy 7 ACME NEW NAME@29.52 USD (CODENEW123456),,USD,-206.64,USD,3.00,
+        03-10-2022,07:22,03-10-2022,ACME OLD NAME,CODEOLD123456,ISIN CHANGE: Sell 7 ACME OLD NAME@29.52 USD (CODEOLD123456),,USD,206.64,USD,209.64,
+        08-09-2022,21:31,08-09-2022,ACME OLD NAME,CODEOLD123456,FX Credit,0.9970,USD,222.39,USD,-0.00,b5e65ac1-b3ae-4237-902b-d60932cd7cb9
+        08-09-2022,21:31,08-09-2022,ACME OLD NAME,CODEOLD123456,FX Debit,,EUR,-223.06,EUR,1416.23,b5e65ac1-b3ae-4237-902b-d60932cd7cb9
+        08-09-2022,21:31,08-09-2022,ACME OLD NAME,CODEOLD123456,DEGIRO Transaction and/or third party fees,,EUR,-1.00,EUR,1639.29,b5e65ac1-b3ae-4237-902b-d60932cd7cb9
+        08-09-2022,21:31,08-09-2022,ACME OLD NAME,CODEOLD123456,Buy 7 ACME OLD NAME@31.77 USD (CODEOLD123456),,USD,-222.39,USD,-222.39,b5e65ac1-b3ae-4237-902b-d60932cd7cb9"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
+        txns |> should haveLength 2
+
+        let sellTxns = getSellTxnsInPeriod txns 2022 Period.All
+        let isinChanges = getStockChanges rows
+        isinChanges |> should haveCount 1
+
+        let expectedEarning =
+            { Date = DateTime(2022, 10, 17, 17, 1, 0)
+              Product = "ACME NEW NAME"
+              ISIN = "CODENEW123456"
+              ProdType = Shares
+              Value = (229.17m - 223.06m)
+              Percent = Math.Round(((229.17m - 223.06m) / 223.06m) * 100.0m, 2) }
+
+        getSellsEarnings sellTxns txns isinChanges
+        |> should equal [ expectedEarning ]
+
+
+    [<Test>]
+    let ``Create StockChange objects`` () =
         let testRows =
             header
             + """
@@ -460,9 +532,9 @@ module AccountTests =
         06-06-2022,14:38,06-06-2022,ACME Inc OLD,CODEOLD123456,STOCK SPLIT: Sell 50 ACME Inc OLD@1.75 USD (CODEOLD123456),,USD,87.50,USD,87.50,"""
 
         let rows = AccountCsv.Parse(testRows).Rows
-        let split = getSplits rows
+        let stockChanges = getStockChanges rows
 
-        let expectedSplitMap =
+        let expectedStockChangeMap =
             Map[("CODENEW123456",
                  { Date = DateTime(2022, 6, 6, 14, 38, 0)
                    IsinBefore = "CODEOLD123456"
@@ -471,7 +543,8 @@ module AccountTests =
                    ProductAfter = "ACME Inc NEW"
                    Multiplier = 10 })]
 
-        split |> should equal expectedSplitMap
+        stockChanges
+        |> should equal expectedStockChangeMap
 
 
     [<Test>]

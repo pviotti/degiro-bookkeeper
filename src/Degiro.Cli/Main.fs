@@ -9,7 +9,11 @@ open Degiro.Account
 open Degiro.CliOutput
 open Degiro.CsvOutput
 
-let VERSION = Assembly.GetExecutingAssembly().GetName().Version.ToString()
+let VERSION =
+    Assembly
+        .GetExecutingAssembly()
+        .GetName()
+        .Version.ToString()
 
 let PROGRAM_NAME = AppDomain.CurrentDomain.FriendlyName
 
@@ -72,7 +76,9 @@ let main argv =
         let cleanCsv, isMalformed = cleanCsv originalCsvContent
 
         if isMalformed then
-            let newFilePath = csvFilePath[.. csvFilePath.Length - 5] + "-clean.csv"
+            let newFilePath =
+                csvFilePath[.. csvFilePath.Length - 5]
+                + "-clean.csv"
 
             File.WriteAllText(newFilePath, cleanCsv)
             printfn $"Cleaned CSV file has been written to {newFilePath}.\n"
@@ -88,11 +94,11 @@ let main argv =
 
         let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
 
-        let splits = getSplits rows
+        let stockChanges = getStockChanges rows
 
-        if not (Map.isEmpty splits) then
-            printfn "🖋  The Account Statement reports the following stock splits:\n"
-            printfn $"%s{getSplitCliString splits.Values}\n"
+        if not (Map.isEmpty stockChanges) then
+            printfn "🖋  The Account Statement reports the following stock splits, ISIN or product name changes:\n"
+            printfn $"%s{getStockChangesCliString stockChanges.Values}\n"
 
         let sellsInPeriod = getSellTxnsInPeriod txns year period
 
@@ -101,16 +107,19 @@ let main argv =
             printfn $"No sells recorded in %d{year}, period: %A{period}."
         else
             let sellsSharesInPeriod =
-                sellsInPeriod |> List.filter (fun x -> x.ProdType = Shares)
+                sellsInPeriod
+                |> List.filter (fun x -> x.ProdType = Shares)
 
-            let sellsETFInPeriod = sellsInPeriod |> List.filter (fun x -> x.ProdType = ETF)
+            let sellsETFInPeriod =
+                sellsInPeriod
+                |> List.filter (fun x -> x.ProdType = ETF)
 
-            let earningsSharesInPeriod = getSellsEarnings sellsSharesInPeriod txns splits
+            let earningsSharesInPeriod = getSellsEarnings sellsSharesInPeriod txns stockChanges
 
             printfn $"💰 Earnings from shares in {year}, period %A{period}:\n"
             printfn $"%s{getEarningsCliString earningsSharesInPeriod}"
 
-            let earningsETFInPeriod = getSellsEarnings sellsETFInPeriod txns splits
+            let earningsETFInPeriod = getSellsEarnings sellsETFInPeriod txns stockChanges
             printfn $"\n💰 Earnings from ETF in {year}, period %A{period}:\n"
             printfn $"%s{getEarningsCliString earningsETFInPeriod}"
 
@@ -165,7 +174,8 @@ let main argv =
 #if DEBUG
         printfn $"\nElapsed time: {timer.ElapsedMilliseconds} ms"
 #endif
-    with ex ->
+    with
+    | ex ->
         eprintfn $"Error: %s{ex.Message}\n%s{ex.StackTrace}"
         Environment.Exit 1
 

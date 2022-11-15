@@ -10,7 +10,9 @@ module Utils =
 
     // Create discriminated unions from string - http://fssnip.net/9l
     let fromString<'a> (s: string) =
-        match FSharpType.GetUnionCases typeof<'a> |> Array.filter (fun case -> case.Name = s) with
+        match FSharpType.GetUnionCases typeof<'a>
+              |> Array.filter (fun case -> case.Name = s)
+            with
         | [| case |] -> FSharpValue.MakeUnion(case, [||]) :?> 'a
         | _ -> failwith (s + " not recognized as a valid parameter.")
 
@@ -69,7 +71,8 @@ type Period =
     | Later = 2
     | All = 3
 
-type StockSplit =
+/// Models stock splits, ISIN or name changes
+type StockChange =
     { Date: DateTime
       IsinBefore: string
       IsinAfter: string

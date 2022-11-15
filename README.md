@@ -50,6 +50,7 @@ OPTIONS:
  - output summary of deposits and withdrawals both total and per-year
  - output total ADR fees for a given year in $
  - output and take into account stock splits
+ - output and take into account changes in stock name or ISIN
  - country-specific features:
    - Ireland: support for CGT tax periods (i.e. Initial and Later - see revenue.ie)
 

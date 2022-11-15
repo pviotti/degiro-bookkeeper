@@ -47,13 +47,14 @@ module CliOutput =
     let getEarningsCliString (earnings: Earning list) =
         let sb = StringBuilder()
 
-        sb.AppendLine $"""%-10s{"Date"} %-40s{"Product"} %7s{"P/L (€)"} %8s{"P/L %"}"""
+        sb.AppendLine $"""%-10s{"Date"} %-40s{"Product"} %9s{"P/L (€)"} %8s{"P/L %"}"""
         |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 68 "─"}""" |> ignore
+        sb.AppendLine $"""%s{String.replicate 70 "─"}"""
+        |> ignore
 
         let getEarningLine (e: Earning) =
-            sb.AppendLine $"""%s{e.Date.ToString("yyyy-MM-dd")} %-40s{e.Product} %7.2f{e.Value} %7.1f{e.Percent}%%"""
+            sb.AppendLine $"""%s{e.Date.ToString("yyyy-MM-dd")} %-40s{e.Product} %9.2f{e.Value} %7.1f{e.Percent}%%"""
             |> ignore
 
         earnings |> List.iter getEarningLine
@@ -70,21 +71,25 @@ module CliOutput =
 
         sb.AppendLine() |> ignore
 
-        sb.AppendLine $"""Tot. P/L (€): %.2f{periodTotalEarnings}""" |> ignore
-        sb.AppendLine $"""Avg %% P/L: %.2f{periodAvgPercEarnings}%%""" |> ignore
+        sb.AppendLine $"""Tot. P/L (€): %.2f{periodTotalEarnings}"""
+        |> ignore
+
+        sb.AppendLine $"""Avg %% P/L: %.2f{periodAvgPercEarnings}%%"""
+        |> ignore
 
         sb.ToString()
 
     let getDividendsCliString (dividends: Dividend list) =
         let sb = StringBuilder()
 
-        sb.AppendLine $"""%-40s{"Product"} %7s{"Tax"} %7s{"Value"} %8s{"Currency"}"""
+        sb.AppendLine $"""%-40s{"Product"} %9s{"Tax"} %9s{"Value"} %8s{"Currency"}"""
         |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 65 "─"}""" |> ignore
+        sb.AppendLine $"""%s{String.replicate 69 "─"}"""
+        |> ignore
 
         let getDividentLine (d: Dividend) =
-            sb.AppendLine $"%-40s{d.Product} %7.2f{d.ValueTax} %7.2f{d.Value} %8A{d.Currency}"
+            sb.AppendLine $"%-40s{d.Product} %9.2f{d.ValueTax} %9.2f{d.Value} %8A{d.Currency}"
             |> ignore
 
         dividends |> List.iter getDividentLine
@@ -107,19 +112,25 @@ module CliOutput =
 
         sb.ToString()
 
-    let getSplitCliString (splits: seq<StockSplit>) =
+    let getStockChangesCliString (stockChanges: seq<StockChange>) =
+        let sortedStockChanges =
+            stockChanges
+            |> Seq.sortByDescending (fun x -> x.Date)
+
         let sb = StringBuilder()
 
-        sb.AppendLine $"""%-10s{"Date"} %-15s{"ISIN Before"} %-15s{"ISIN After"} %-40s{"Product"} %-10s{"Multiplier"}"""
+        sb.AppendLine
+            $"""%-10s{"Date"} %-13s{"ISIN Before"} %-13s{"ISIN After"} %-40s{"Product Name Before"} %-40s{"Product Name After"} %-10s{"Multiplier"}"""
         |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 94 "─"}""" |> ignore
+        sb.AppendLine $"""%s{String.replicate 131 "─"}"""
+        |> ignore
 
-        let getSplitLine (s: StockSplit) =
+        let getChangeLine (s: StockChange) =
             sb.AppendLine
-                $"""%-10s{s.Date.ToString("yyyy-MM-dd")} %-15s{s.IsinBefore} %-15s{s.IsinAfter} %-40s{s.ProductAfter} %10d{s.Multiplier}"""
+                $"""%-10s{s.Date.ToString("yyyy-MM-dd")} %-13s{s.IsinBefore} %-13s{s.IsinAfter} %-40s{s.ProductBefore} %-40s{s.ProductAfter} %10d{s.Multiplier}"""
             |> ignore
 
-        splits |> Seq.iter getSplitLine
+        sortedStockChanges |> Seq.iter getChangeLine
 
         sb.ToString()

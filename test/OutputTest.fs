@@ -36,12 +36,17 @@ module OutputTests =
 2021-01-02,ACME Inc B,ABC2,ETF,500.0,10.0
 """
 
-        earningsToCsvString [ earningOne; earningTwo ] |> should equal expectedStr
+        earningsToCsvString [ earningOne
+                              earningTwo ]
+        |> should equal expectedStr
 
     [<TestCase>]
     let ``Empty earnings list to CSV string`` () =
         earningsToCsvString List.empty
-        |> should equal ("Date,Product,ISIN,Type,Value,Percent" + Environment.NewLine)
+        |> should
+            equal
+            ("Date,Product,ISIN,Type,Value,Percent"
+             + Environment.NewLine)
 
 
     [<TestCase>]
@@ -68,13 +73,18 @@ ACME Inc A,ABC1,42.0,0.50,USD
 ACME Inc B,ABC2,142.0,0.52,EUR
 """
 
-        dividendsToCsvString [ dividendOne; dividendTwo ] |> should equal expectedStr
+        dividendsToCsvString [ dividendOne
+                               dividendTwo ]
+        |> should equal expectedStr
 
 
     [<TestCase>]
     let ``Empty dividends list to CSV string`` () =
         dividendsToCsvString List.Empty
-        |> should equal ("Product,ISIN,Value,Value Tax,Currency" + Environment.NewLine)
+        |> should
+            equal
+            ("Product,ISIN,Value,Value Tax,Currency"
+             + Environment.NewLine)
 
     [<TestCase>]
     let ``Get earnings CLI string`` () =
@@ -97,7 +107,9 @@ ACME Inc B,ABC2,142.0,0.52,EUR
         let expectedStr1 = "Tot. P/L (€): 150.00"
         let expectedStr2 = "Avg % P/L: 15.00%"
 
-        let outStr = getEarningsCliString [ earningOne; earningTwo ]
+        let outStr =
+            getEarningsCliString [ earningOne
+                                   earningTwo ]
 
         outStr |> should contain expectedStr1
         outStr |> should contain expectedStr2
@@ -123,22 +135,24 @@ ACME Inc B,ABC2,142.0,0.52,EUR
         let expectedStr1 = "Tot. net dividends in €: 1.50"
         let expectedStr2 = "Tot. net dividends in $: 4.50"
 
-        let outStr = getDividendsCliString [ dividendOne; dividendTwo ]
+        let outStr =
+            getDividendsCliString [ dividendOne
+                                    dividendTwo ]
 
         outStr |> should contain expectedStr1
         outStr |> should contain expectedStr2
 
     [<TestCase>]
-    let ``Get splits CLI string`` () =
-        let split: StockSplit =
-            { Date = DateTime(2022, 03, 04)
+    let ``Get stock change CLI string`` () =
+        let stockChange: StockChange =
+            { Date = DateTime(2022, 3, 4)
               IsinBefore = "ABC-Before"
               IsinAfter = "ABC-After"
               Multiplier = 3
               ProductAfter = "ABC"
               ProductBefore = "ABC Before" }
 
-        let outStr = getSplitCliString [| split |]
+        let outStr = getStockChangesCliString [| stockChange |]
 
         outStr |> should contain "ABC-After"
 
