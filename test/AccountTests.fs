@@ -90,7 +90,10 @@ module AccountTests =
     [<Test>]
     let ``BuildTxn with ETF`` () =
         let realEtfDescr =
-            [ "VANGUARD FTSE AW"; "SPDR S&P 500"; "ISHARES S&P 500"; "LYXOR ETF CAC 40" ]
+            [ "VANGUARD FTSE AW"
+              "SPDR S&P 500"
+              "ISHARES S&P 500"
+              "LYXOR ETF CAC 40" ]
 
         let rndEtfDesc = realEtfDescr[Random().Next(realEtfDescr.Length)]
 
@@ -211,11 +214,14 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         getTotalDeposits rows |> should equal 2200.0
 
-        getTotalYearDeposits rows 2019 |> should equal 1000.0
+        getTotalYearDeposits rows 2019
+        |> should equal 1000.0
 
-        getTotalYearDeposits rows 2020 |> should equal 500.0
+        getTotalYearDeposits rows 2020
+        |> should equal 500.0
 
-        getTotalYearDeposits rows 2021 |> should equal 700.0
+        getTotalYearDeposits rows 2021
+        |> should equal 700.0
 
 
     [<Test>]
@@ -238,13 +244,18 @@ module AccountTests =
         30-06-2020,10:50,30-06-2020,,,flatex Deposit,,EUR,500.00,EUR,1051.56,"""
 
         let rows = AccountCsv.Parse(testRows).Rows
-        getTotalWithdrawals rows |> should equal (500.0 + 1540.0 + 1000.0)
 
-        getTotalYearWithdrawals rows 2015 |> should equal 500.0
+        getTotalWithdrawals rows
+        |> should equal (500.0 + 1540.0 + 1000.0)
 
-        getTotalYearWithdrawals rows 2016 |> should equal 1540.0
+        getTotalYearWithdrawals rows 2015
+        |> should equal 500.0
 
-        getTotalYearWithdrawals rows 2019 |> should equal 1000.0
+        getTotalYearWithdrawals rows 2016
+        |> should equal 1540.0
+
+        getTotalYearWithdrawals rows 2019
+        |> should equal 1000.0
 
 
     [<Test>]
@@ -313,13 +324,20 @@ module AccountTests =
                 Quantity = 4
                 Date = DateTime(2020, 12, 1) }
 
-        let allTxns = [ txnBuyA1; txnBuyA2; txnBuyB1; txnSellA1 ]
+        let allTxns =
+            [ txnBuyA1
+              txnBuyA2
+              txnBuyB1
+              txnSellA1 ]
 
-        getSellTxnsInPeriod allTxns 2019 Period.Initial |> should be Empty
+        getSellTxnsInPeriod allTxns 2019 Period.Initial
+        |> should be Empty
 
-        getSellTxnsInPeriod allTxns 2020 Period.Initial |> should be Empty
+        getSellTxnsInPeriod allTxns 2020 Period.Initial
+        |> should be Empty
 
-        getSellTxnsInPeriod allTxns 2020 Period.Later |> should equal [ txnSellA1 ]
+        getSellTxnsInPeriod allTxns 2020 Period.Later
+        |> should equal [ txnSellA1 ]
 
         let expectedEarning =
             { Date = txnSellA1.Date
@@ -367,7 +385,8 @@ module AccountTests =
 
         let sellTxns = getSellTxnsInPeriod allTnxs 2020 Period.All
 
-        getSellsEarnings sellTxns allTnxs Map.empty |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns allTnxs Map.empty
+        |> should equal [ expectedEarning ]
 
 
     [<Test>]
@@ -462,7 +481,8 @@ module AccountTests =
               Value = (86.43m - 184.58m)
               Percent = Math.Round(((86.43m - 184.58m) / 184.58m) * 100.0m, 2) }
 
-        getSellsEarnings sellTxns txns splits |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns txns splits
+        |> should equal [ expectedEarning ]
 
 
     [<Test>]
@@ -492,14 +512,15 @@ module AccountTests =
         isinChanges |> should haveCount 1
 
         let expectedEarning =
-            { Date = DateTime(2022, 10, 17, 17, 01, 0)
+            { Date = DateTime(2022, 10, 17, 17, 1, 0)
               Product = "ACME NEW NAME"
               ISIN = "CODENEW123456"
               ProdType = Shares
               Value = (229.17m - 223.06m)
               Percent = Math.Round(((229.17m - 223.06m) / 223.06m) * 100.0m, 2) }
 
-        getSellsEarnings sellTxns txns isinChanges |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns txns isinChanges
+        |> should equal [ expectedEarning ]
 
 
     [<Test>]
@@ -522,7 +543,8 @@ module AccountTests =
                    ProductAfter = "ACME Inc NEW"
                    Multiplier = 10 })]
 
-        stockChanges |> should equal expectedStockChangeMap
+        stockChanges
+        |> should equal expectedStockChangeMap
 
 
     [<Test>]

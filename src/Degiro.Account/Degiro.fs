@@ -13,7 +13,13 @@ module Account =
         "^(?:STOCK SPLIT: |)(?:ISIN CHANGE: |)(Buy|Sell) (\d+) .+?(?=@)@([\.,\d]+)[ ]*(EUR|USD|)"
 
     let etfDescriptionMarkers =
-        [ " ETF"; "STOXX"; "SPDR S&P"; "ISHARES"; "EQQQ"; "VANGUARD"; "LYXOR" ]
+        [ " ETF"
+          "STOXX"
+          "SPDR S&P"
+          "ISHARES"
+          "EQQQ"
+          "VANGUARD"
+          "LYXOR" ]
 
     [<Literal>]
     let accountStatementSampleCsv =
@@ -84,10 +90,14 @@ module Account =
             let getFractionalPrice (row: Row) =
                 let matches = Regex.Match(row.Description, txnDescriptionRegExp)
 
-                (decimal matches.Groups[2].Value) * (Decimal.Parse(matches.Groups[3].Value))
+                (decimal matches.Groups[2].Value)
+                * (Decimal.Parse(matches.Groups[3].Value))
 
             let getTotQuantity (rows: seq<Row>) (filter: Row -> bool) =
-                rows |> Seq.filter filter |> Seq.map getFractionalQuantity |> Seq.sum
+                rows
+                |> Seq.filter filter
+                |> Seq.map getFractionalQuantity
+                |> Seq.sum
 
             let firstDescRow = Seq.last descRows
             let txnType, valueCurrency = getTxnTypeAndCurrency firstDescRow
@@ -110,10 +120,16 @@ module Account =
                     let totBuyQuantity = getTotQuantity descRows isBuy
 
                     let totalPriceSells =
-                        descRows |> Seq.filter isSell |> Seq.map getFractionalPrice |> Seq.sum
+                        descRows
+                        |> Seq.filter isSell
+                        |> Seq.map getFractionalPrice
+                        |> Seq.sum
 
                     let totalPriceBuys =
-                        descRows |> Seq.filter isBuy |> Seq.map getFractionalPrice |> Seq.sum
+                        descRows
+                        |> Seq.filter isBuy
+                        |> Seq.map getFractionalPrice
+                        |> Seq.sum
 
                     Trace.Assert(
                         totBuyQuantity = totSellQuantity
@@ -161,8 +177,8 @@ module Account =
               Value = totValue
               ValueCurrency = valueCurrency
               OrderId = (Option.defaultValue Guid.Empty firstDescRow.OrderId) }
-        with ex ->
-            failwithf $"parsing failed on transaction: %A{Seq.toList allRows}\n\n%A{ex}"
+        with
+        | ex -> failwithf $"parsing failed on transaction: %A{Seq.toList allRows}\n\n%A{ex}"
 
 
     /// Get all sell transactions for the given year and Irish tax period
@@ -181,8 +197,9 @@ module Account =
     let getStockChanges (rows: seq<Row>) : Map<string, StockChange> =
         let changeRowGroups =
             rows
-            |> Seq.filter (fun x -> x.Description.StartsWith "STOCK SPLIT:" ||
-                                        x.Description.StartsWith "ISIN CHANGE:")
+            |> Seq.filter (fun x ->
+                x.Description.StartsWith "STOCK SPLIT:"
+                || x.Description.StartsWith "ISIN CHANGE:")
             |> Seq.groupBy (fun x -> x.Date.ToString() + x.Time.ToString())
 
         let createStockChange (changeRows: seq<Row>) =
@@ -213,12 +230,14 @@ module Account =
               Multiplier = multiplier }
 
         let changes: seq<StockChange> =
-            changeRowGroups |> Seq.map (fun changeGroup -> createStockChange (snd changeGroup))
+            changeRowGroups
+            |> Seq.map (fun changeGroup -> createStockChange (snd changeGroup))
 
         let folder (changeMap: Map<string, StockChange>) (change: StockChange) =
             changeMap |> Map.add change.IsinAfter change
 
-        changes |> Seq.fold folder Map.empty<string, StockChange>
+        changes
+        |> Seq.fold folder Map.empty<string, StockChange>
 
 
     /// Get all buy transactions preceding a given sell transactions (taking into account stock changes)
@@ -226,7 +245,10 @@ module Account =
 
         let buysPrecedingSell =
             txns
-            |> List.filter (fun x -> x.Type = Buy && x.Date < sellTxn.Date && x.ISIN = sellTxn.ISIN)
+            |> List.filter (fun x ->
+                x.Type = Buy
+                && x.Date < sellTxn.Date
+                && x.ISIN = sellTxn.ISIN)
             |> List.sortByDescending (fun x -> x.Date)
 
         if stockChanges.ContainsKey sellTxn.ISIN then
@@ -235,7 +257,10 @@ module Account =
 
             let buysPrecedingSellBeforeStockChange =
                 txns
-                |> List.filter (fun x -> x.Type = Buy && x.Date < sellTxn.Date && x.ISIN = stockChange.IsinBefore)
+                |> List.filter (fun x ->
+                    x.Type = Buy
+                    && x.Date < sellTxn.Date
+                    && x.ISIN = stockChange.IsinBefore)
                 |> List.map (fun x ->
                     { x with
                         Product = stockChange.ProductAfter
@@ -243,7 +268,8 @@ module Account =
                         Value = x.Value * (decimal stockChange.Multiplier)
                         Quantity = x.Quantity / stockChange.Multiplier })
 
-            buysPrecedingSell @ buysPrecedingSellBeforeStockChange
+            buysPrecedingSell
+            @ buysPrecedingSellBeforeStockChange
             |> List.sortByDescending (fun x -> x.Date)
         else
             buysPrecedingSell
@@ -270,7 +296,8 @@ module Account =
                     else
                         0,
                         (totBuyPrice
-                         + (currBuy.Price / decimal currBuy.Quantity) * decimal quantityToSell)
+                         + (currBuy.Price / decimal currBuy.Quantity)
+                           * decimal quantityToSell)
 
                 getTotBuyPrice (List.tail buys) quantityRemaining newTotalBuyPrice
 
@@ -281,7 +308,11 @@ module Account =
 
 
     /// Return the Earning objects for a given sequence of sells
-    let getSellsEarnings (sells: list<Txn>) (allTxns: list<Txn>) (stockChanges: Map<string, StockChange>) : list<Earning> =
+    let getSellsEarnings
+        (sells: list<Txn>)
+        (allTxns: list<Txn>)
+        (stockChanges: Map<string, StockChange>)
+        : list<Earning> =
         sells
         |> List.map (fun sell ->
             let earning, earningPercentage = computeEarning allTxns stockChanges sell
@@ -297,7 +328,9 @@ module Account =
     /// Compute total ADR Fees (in USD)
     let getTotalYearAdrFees (rows: seq<Row>) (year: int) =
         rows
-        |> Seq.filter (fun x -> x.Date.Year = year && x.Description.Contains "ADR/GDR Pass-Through Fee")
+        |> Seq.filter (fun x ->
+            x.Date.Year = year
+            && x.Description.Contains "ADR/GDR Pass-Through Fee")
         |> Seq.sumBy (fun x -> x.Price.Value)
 
 
@@ -314,7 +347,9 @@ module Account =
     /// Get the total sum of deposits recorded in the Account Statement
     let getTotalDeposits (rows: seq<Row>) =
         rows
-        |> Seq.filter (fun x -> x.Description.Equals "Deposit" || x.Description.Equals "flatex Deposit")
+        |> Seq.filter (fun x ->
+            x.Description.Equals "Deposit"
+            || x.Description.Equals "flatex Deposit")
         |> Seq.sumBy (fun x -> x.Price.Value)
 
 
@@ -322,7 +357,8 @@ module Account =
     let getTotalYearDeposits (rows: seq<Row>) (year: int) =
         rows
         |> Seq.filter (fun x ->
-            (x.Description.Equals "Deposit" || x.Description.Equals "flatex Deposit")
+            (x.Description.Equals "Deposit"
+             || x.Description.Equals "flatex Deposit")
             && x.Date.Year = year)
         |> Seq.sumBy (fun x -> x.Price.Value)
 
@@ -330,7 +366,9 @@ module Account =
     /// Get the total sum of withdrawals recorded in the Account Statement
     let getTotalWithdrawals (rows: seq<Row>) =
         rows
-        |> Seq.filter (fun x -> (x.Description.Equals "Processed Flatex Withdrawal" && x.Price.Value > 0.0m))
+        |> Seq.filter (fun x ->
+            (x.Description.Equals "Processed Flatex Withdrawal"
+             && x.Price.Value > 0.0m))
         |> Seq.sumBy (fun x -> x.Price.Value)
 
 
@@ -378,24 +416,33 @@ module Account =
             rows
             |> Seq.filter (fun x ->
                 x.Date.Year = year
-                && (x.Description.Equals "Dividend" || x.Description.Equals "Dividend Tax"))
+                && (x.Description.Equals "Dividend"
+                    || x.Description.Equals "Dividend Tax"))
             |> Seq.toList
 
         let productsWithDividendsInYear =
-            rowsDividendsInYear |> List.map (fun x -> x.Product) |> List.distinct
+            rowsDividendsInYear
+            |> List.map (fun x -> x.Product)
+            |> List.distinct
 
         let getAllDividendsForProductInYear (rowsDividends: Row list) (product: string) =
             let totDividends =
                 rowsDividends
-                |> List.filter (fun x -> x.Description.Equals "Dividend" && x.Product = product)
+                |> List.filter (fun x ->
+                    x.Description.Equals "Dividend"
+                    && x.Product = product)
                 |> List.sumBy (fun x -> x.Price.Value)
 
             let totTaxDividends =
                 rowsDividends
-                |> List.filter (fun x -> x.Description.Equals "Dividend Tax" && x.Product = product)
+                |> List.filter (fun x ->
+                    x.Description.Equals "Dividend Tax"
+                    && x.Product = product)
                 |> List.sumBy (fun x -> x.Price.Value)
 
-            let dividendRow = rowsDividends |> List.find (fun x -> x.Product = product)
+            let dividendRow =
+                rowsDividends
+                |> List.find (fun x -> x.Product = product)
 
             { Year = year
               Product = product

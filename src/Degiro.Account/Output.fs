@@ -50,7 +50,8 @@ module CliOutput =
         sb.AppendLine $"""%-10s{"Date"} %-40s{"Product"} %9s{"P/L (€)"} %8s{"P/L %"}"""
         |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 70 "─"}""" |> ignore
+        sb.AppendLine $"""%s{String.replicate 70 "─"}"""
+        |> ignore
 
         let getEarningLine (e: Earning) =
             sb.AppendLine $"""%s{e.Date.ToString("yyyy-MM-dd")} %-40s{e.Product} %9.2f{e.Value} %7.1f{e.Percent}%%"""
@@ -70,8 +71,11 @@ module CliOutput =
 
         sb.AppendLine() |> ignore
 
-        sb.AppendLine $"""Tot. P/L (€): %.2f{periodTotalEarnings}""" |> ignore
-        sb.AppendLine $"""Avg %% P/L: %.2f{periodAvgPercEarnings}%%""" |> ignore
+        sb.AppendLine $"""Tot. P/L (€): %.2f{periodTotalEarnings}"""
+        |> ignore
+
+        sb.AppendLine $"""Avg %% P/L: %.2f{periodAvgPercEarnings}%%"""
+        |> ignore
 
         sb.ToString()
 
@@ -81,7 +85,8 @@ module CliOutput =
         sb.AppendLine $"""%-40s{"Product"} %9s{"Tax"} %9s{"Value"} %8s{"Currency"}"""
         |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 69 "─"}""" |> ignore
+        sb.AppendLine $"""%s{String.replicate 69 "─"}"""
+        |> ignore
 
         let getDividentLine (d: Dividend) =
             sb.AppendLine $"%-40s{d.Product} %9.2f{d.ValueTax} %9.2f{d.Value} %8A{d.Currency}"
@@ -108,13 +113,18 @@ module CliOutput =
         sb.ToString()
 
     let getStockChangesCliString (stockChanges: seq<StockChange>) =
-        let sortedStockChanges = stockChanges |> Seq.sortByDescending (fun x -> x.Date)
+        let sortedStockChanges =
+            stockChanges
+            |> Seq.sortByDescending (fun x -> x.Date)
+
         let sb = StringBuilder()
 
-        sb.AppendLine $"""%-10s{"Date"} %-13s{"ISIN Before"} %-13s{"ISIN After"} %-40s{"Product Name Before"} %-40s{"Product Name After"} %-10s{"Multiplier"}"""
+        sb.AppendLine
+            $"""%-10s{"Date"} %-13s{"ISIN Before"} %-13s{"ISIN After"} %-40s{"Product Name Before"} %-40s{"Product Name After"} %-10s{"Multiplier"}"""
         |> ignore
 
-        sb.AppendLine $"""%s{String.replicate 131 "─"}""" |> ignore
+        sb.AppendLine $"""%s{String.replicate 131 "─"}"""
+        |> ignore
 
         let getChangeLine (s: StockChange) =
             sb.AppendLine
