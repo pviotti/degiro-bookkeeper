@@ -488,8 +488,8 @@ module AccountTests =
         txns |> should haveLength 2
 
         let sellTxns = getSellTxnsInPeriod txns 2022 Period.All
-        let splits = getStockChanges rows
-        splits |> should haveCount 1
+        let isinChanges = getStockChanges rows
+        isinChanges |> should haveCount 1
 
         let expectedEarning =
             { Date = DateTime(2022, 10, 17, 17, 01, 0)
@@ -499,7 +499,7 @@ module AccountTests =
               Value = (229.17m - 223.06m)
               Percent = Math.Round(((229.17m - 223.06m) / 223.06m) * 100.0m, 2) }
 
-        getSellsEarnings sellTxns txns splits |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns txns isinChanges |> should equal [ expectedEarning ]
 
 
     [<Test>]
