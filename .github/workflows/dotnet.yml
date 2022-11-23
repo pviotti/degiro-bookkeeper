@@ -19,9 +19,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '7.x'
     - name: Restore dependencies
@@ -31,7 +31,7 @@ jobs:
     - name: Test
       run: dotnet test --no-build --nologo --verbosity normal --collect:"XPlat Code Coverage"
     - name: ReportGenerator
-      uses: danielpalme/ReportGenerator-GitHub-Action@4.8.9
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.1.12
       with:
         reports: '**/TestResults/**/coverage.cobertura.xml'
         targetdir: 'coveragereport'
@@ -40,12 +40,12 @@ jobs:
         tag: '${{ github.run_number }}_${{ github.run_id }}'
         toolpath: 'reportgeneratortool'
     - name: Upload coverage report artifact
-      uses: actions/upload-artifact@v2.2.3
+      uses: actions/upload-artifact@v3
       with:
         name: CoverageReport
         path: coveragereport
     - name: Codecov
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
       with:
         files: ./coveragereport/Cobertura.xml
         directory: ./coveragereport/
@@ -66,9 +66,9 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '7.x'
     - name: Set version variable (Linux and MacOS)
