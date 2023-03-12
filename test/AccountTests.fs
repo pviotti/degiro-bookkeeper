@@ -93,6 +93,7 @@ module AccountTests =
             [ "VANGUARD FTSE AW"
               "SPDR S&P 500"
               "ISHARES S&P 500"
+              "iSHR ESTX50 B A"
               "LYXOR ETF CAC 40" ]
 
         let rndEtfDesc = realEtfDescr[Random().Next(realEtfDescr.Length)]

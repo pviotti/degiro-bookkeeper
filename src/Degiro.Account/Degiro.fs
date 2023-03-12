@@ -17,6 +17,7 @@ module Account =
           "STOXX"
           "SPDR S&P"
           "ISHARES"
+          "iSHR"
           "EQQQ"
           "VANGUARD"
           "LYXOR" ]
