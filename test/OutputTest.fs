@@ -31,10 +31,9 @@ module OutputTests =
                 Percent = 10.0m }
 
         let expectedStr =
-            """Date,Product,ISIN,Type,Value,Percent
-2021-01-02,ACME Inc A,ABC1,Shares,123.0,20.0
-2021-01-02,ACME Inc B,ABC2,ETF,500.0,10.0
-"""
+            ("Date,Product,ISIN,Type,Value,Percent\r\n"
+             + "2021-01-02,ACME Inc A,ABC1,Shares,123.0,20.0\r\n"
+             + "2021-01-02,ACME Inc B,ABC2,ETF,500.0,10.0\r\n")
 
         earningsToCsvString [ earningOne
                               earningTwo ]
@@ -43,10 +42,7 @@ module OutputTests =
     [<TestCase>]
     let ``Empty earnings list to CSV string`` () =
         earningsToCsvString List.empty
-        |> should
-            equal
-            ("Date,Product,ISIN,Type,Value,Percent"
-             + Environment.NewLine)
+        |> should equal "Date,Product,ISIN,Type,Value,Percent\r\n"
 
 
     [<TestCase>]
@@ -68,10 +64,9 @@ module OutputTests =
                 Currency = EUR }
 
         let expectedStr =
-            """Product,ISIN,Value,Value Tax,Currency
-ACME Inc A,ABC1,42.0,0.50,USD
-ACME Inc B,ABC2,142.0,0.52,EUR
-"""
+            ("Product,ISIN,Value,Value Tax,Currency\r\n"
+             + "ACME Inc A,ABC1,42.0,0.50,USD\r\n"
+             + "ACME Inc B,ABC2,142.0,0.52,EUR\r\n")
 
         dividendsToCsvString [ dividendOne
                                dividendTwo ]
@@ -81,10 +76,7 @@ ACME Inc B,ABC2,142.0,0.52,EUR
     [<TestCase>]
     let ``Empty dividends list to CSV string`` () =
         dividendsToCsvString List.Empty
-        |> should
-            equal
-            ("Product,ISIN,Value,Value Tax,Currency"
-             + Environment.NewLine)
+        |> should equal "Product,ISIN,Value,Value Tax,Currency\r\n"
 
     [<TestCase>]
     let ``Get earnings CLI string`` () =
