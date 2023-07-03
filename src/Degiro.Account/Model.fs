@@ -31,6 +31,7 @@ type Currency =
     | USD
     | EUR
     | CAD
+    | GBP
 
     override this.ToString() = Utils.toString this
     static member FromString s = Utils.fromString<Currency> s

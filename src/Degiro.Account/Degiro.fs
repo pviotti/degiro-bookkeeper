@@ -151,8 +151,7 @@ module Account =
                     let price =
                         match valueCurrency with
                         | EUR -> descRows |> Seq.sumBy (fun x -> x.Price.Value)
-                        | USD
-                        | CAD ->
+                        | _ ->
                             match txnType with
                             | Sell ->
                                 allRows
