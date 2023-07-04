@@ -126,6 +126,8 @@ module OutputTests =
 
         let expectedStr1 = "Tot. net dividends in €: 1.50"
         let expectedStr2 = "Tot. net dividends in $: 4.50"
+        let expectedStr3 = "Tot. net dividends in Can$: 0"
+        let expectedStr4 = "Tot. net dividends in £: 0"
 
         let outStr =
             getDividendsCliString [ dividendOne
@@ -133,6 +135,8 @@ module OutputTests =
 
         outStr |> should contain expectedStr1
         outStr |> should contain expectedStr2
+        outStr |> should contain expectedStr3
+        outStr |> should contain expectedStr4
 
     [<TestCase>]
     let ``Get stock change CLI string`` () =

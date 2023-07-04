@@ -154,8 +154,8 @@ let main argv =
 
         // Total deposits and fees
         let yearTotAdrFees = getTotalYearAdrFees rows year
-        let yearTotFees = getTotalYearFees rows year
         let yearTotStampDuty = getTotalYearStampDuty rows year
+        let yearTotFees = getTotalYearFees rows year
         let totDeposits = getTotalDeposits rows
         let totYearDeposits = getTotalYearDeposits rows year
         let totWithdrawals = getTotalWithdrawals rows
