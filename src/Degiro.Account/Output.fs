@@ -107,6 +107,9 @@ module CliOutput =
         sb.AppendLine $"""Tot. net dividends in $: {getTotalNetDividends dividends USD}"""
         |> ignore
 
+        sb.AppendLine $"""Tot. net dividends in £: {getTotalNetDividends dividends GBP}"""
+        |> ignore
+
         sb.AppendLine $"""Tot. net dividends in Can$: {getTotalNetDividends dividends CAD}"""
         |> ignore
 

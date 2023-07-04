@@ -151,8 +151,7 @@ module Account =
                     let price =
                         match valueCurrency with
                         | EUR -> descRows |> Seq.sumBy (fun x -> x.Price.Value)
-                        | USD
-                        | CAD ->
+                        | _ ->
                             match txnType with
                             | Sell ->
                                 allRows
@@ -326,7 +325,7 @@ module Account =
               Percent = earningPercentage })
 
 
-    /// Compute total ADR Fees (in USD)
+    /// Compute total ADR Fees for a given year (in USD)
     let getTotalYearAdrFees (rows: seq<Row>) (year: int) =
         rows
         |> Seq.filter (fun x ->
@@ -335,13 +334,22 @@ module Account =
         |> Seq.sumBy (fun x -> x.Price.Value)
 
 
-    /// Compute total Degiro Fees (transactions fees and stock exchange fees)
+    /// Compute total Degiro Fees for a given year (transactions fees and stock exchange fees)
     let getTotalYearFees (rows: seq<Row>) (year: int) =
         rows
         |> Seq.filter (fun x ->
             x.Date.Year = year
             && (x.Description.Equals "DEGIRO Transaction and/or third party fees"
                 || x.Description.Contains "Exchange Connection Fee"))
+        |> Seq.sumBy (fun x -> x.Price.Value)
+
+
+    /// Compute Stamp Duty fees for a given year
+    let getTotalYearStampDuty (rows: seq<Row>) (year: int) =
+        rows
+        |> Seq.filter (fun x ->
+            x.Date.Year = year
+            && x.Description.Contains "Stamp Duty")
         |> Seq.sumBy (fun x -> x.Price.Value)
 
 
