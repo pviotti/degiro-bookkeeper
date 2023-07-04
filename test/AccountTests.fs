@@ -563,3 +563,33 @@ module AccountTests =
         let totAdrFees = getTotalYearAdrFees rows 2022
 
         Math.Round(totAdrFees, 2) |> should equal 0.6
+
+
+    [<Test>]
+    let ``Get total Stamp Duty fees for a year`` () =
+        let testRows =
+            header
+            + """
+        16-06-2023,15:43,16-06-2023,ACME LTD,GB0012345H64,FX Debit,,EUR,-2387.76,EUR,-9.38,f8a5113b-2bd7-46fd-97d1-cbf00c37dd53
+        16-06-2023,15:43,16-06-2023,ACME LTD,GB0012345H64,London/Dublin Stamp Duty,,EUR,-11.94,EUR,2378.38,f8a5113b-2bd7-46fd-97d1-cbf00c37dd53
+        16-06-2023,15:43,16-06-2023,ACME LTD,GB0012345H64,FX Credit,85.1470,GBP,225.90,GBP,-2033.10,f8a5113b-2bd7-46fd-97d1-cbf00c37dd53
+        16-06-2023,15:43,16-06-2023,ACME LTD,GB0012345H64,FX Debit,,EUR,-265.31,EUR,2390.32,f8a5113b-2bd7-46fd-97d1-cbf00c37dd53
+        16-06-2023,15:43,16-06-2023,ACME LTD,GB0012345H64,DEGIRO Transaction and/or third party fees,,EUR,-4.90,EUR,2655.63,f8a5113b-2bd7-46fd-97d1-cbf00c37dd53
+        16-06-2023,15:43,16-06-2023,ACME LTD,GB0012345H64,London/Dublin Stamp Duty,,EUR,-1.33,EUR,2660.53,f8a5113b-2bd7-46fd-97d1-cbf00c37dd53
+        16-06-2023,15:43,16-06-2023,ACME LTD,GB0012345H64,Buy 270 ACME LTD@753 GBX (GB0012345),,GBP,-2033.10,GBP,-2259.00,f8a5113b-2bd7-46fd-97d1-cbf00c37dd53
+        16-06-2023,15:43,16-06-2023,ACME LTD,GB0012345H64,Buy 30 ACME LTD@753 GBX (GB0012345),,GBP,-225.90,GBP,-225.90,f8a5113b-2bd7-46fd-97d1-cbf00c37dd53
+        16-06-2022,15:37,16-06-2023,FOO BAR LTD,GB123543Y695,FX Credit,85.1673,GBP,1363.64,GBP,0.00,64fc3347-e204-4894-bd03-da3cddbb7fcb
+        16-06-2022,15:37,16-06-2023,FOO BAR LTD,GB123543Y695,FX Debit,,EUR,-1601.15,EUR,2661.86,64fc3347-e204-4894-bd03-da3cddbb7fcb
+        16-06-2022,15:37,16-06-2023,FOO BAR LTD,GB123543Y695,London/Dublin Stamp Duty,,EUR,-8.01,EUR,4263.01,64fc3347-e204-4894-bd03-da3cddbb7fcb
+        16-06-2022,15:37,16-06-2023,FOO BAR LTD,GB123543Y695,FX Credit,85.1673,GBP,74.72,GBP,-1363.64,64fc3347-e204-4894-bd03-da3cddbb7fcb
+        16-06-2022,15:37,16-06-2023,FOO BAR LTD,GB123543Y695,FX Debit,,EUR,-87.73,EUR,4271.02,64fc3347-e204-4894-bd03-da3cddbb7fcb
+        16-06-2022,15:37,16-06-2023,FOO BAR LTD,GB123543Y695,London/Dublin Stamp Duty,,EUR,-0.44,EUR,4358.75,64fc3347-e204-4894-bd03-da3cddbb7fcb
+        16-06-2022,15:37,16-06-2023,FOO BAR LTD,GB123543Y695,Buy 292 FOO BAR@467 GBX (GB00123543),,GBP,-1363.64,GBP,-1438.36,64fc3347-e204-4894-bd03-da3cddbb7fcb"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+
+        getTotalYearStampDuty rows 2022
+        |> should equal (-0.44 - 8.01)
+
+        getTotalYearStampDuty rows 2023
+        |> should equal (-11.94 - 1.33)
