@@ -446,6 +446,20 @@ module AccountTests =
 
 
     [<Test>]
+    let ``Merger rows are not considered transactions`` () =
+        let testRows =
+            header
+            + """
+        02-06-2023,14:25,02-06-2023,BIG CORP COMMON,US4042511123,MERGER: Buy 7 BIG CORP COMMON@25.3651 USD (US4042511123),,USD,-177.56,USD,10.54,
+        02-06-2023,14:25,02-06-2023,SMALL CORP ACME,US494271234,MERGER: Sell 57 SMALL CORP ACME@3.3 USD (US494271234),,USD,188.10,USD,188.10,"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+        let txns = Seq.map buildTxn txnsGrouped
+        txns |> should be Empty
+
+
+    [<Test>]
     let ``Get earnings of a stock that had a split`` () =
         let testRows =
             header
