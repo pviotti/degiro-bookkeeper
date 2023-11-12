@@ -94,7 +94,9 @@ module Account =
 
             let degiroFees =
                 allRows
-                |> Seq.filter (fun (x: Row) -> x.Description.Equals "DEGIRO Transaction and/or third party fees")
+                |> Seq.filter (fun (x: Row) ->
+                    x.Description.Equals "DEGIRO Transaction and/or third party fees"
+                    || x.Description.Equals "Spanish Transaction Tax")
                 |> Seq.sumBy _.Price.Value
 
             let price, totValue, totQuantity =
