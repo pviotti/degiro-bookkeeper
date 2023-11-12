@@ -10,7 +10,7 @@ open FSharp.Data
 module Account =
 
     let txnDescriptionRegExp =
-        "^(?:STOCK SPLIT: |)(?:ISIN CHANGE: |)(Buy|Sell) (\d+) .+?(?=@)@([\.,\d]+)[ ]*(EUR|USD|)"
+        "^(?:STOCK SPLIT: |)(?:ISIN CHANGE: |)(?:MERGER: |)(Buy|Sell) (\d+) .+?(?=@)@([\.,\d]+)[ ]*(EUR|USD|)"
 
     let etfDescriptionMarkers =
         [ " ETF"
@@ -193,12 +193,13 @@ module Account =
         |> List.sortByDescending (fun x -> x.Date)
 
 
-    /// Return a map containing all StockChange indexed by their ISIN after the split
+    /// Return a map containing all StockChange indexed by their ISIN after the split, ISIN change or merger
     let getStockChanges (rows: seq<Row>) : Map<string, StockChange> =
         let changeRowGroups =
             rows
             |> Seq.filter (fun x ->
                 x.Description.StartsWith "STOCK SPLIT:"
+                || x.Description.StartsWith "MERGER:"
                 || x.Description.StartsWith "ISIN CHANGE:")
             |> Seq.groupBy (fun x -> x.Date.ToString() + x.Time.ToString())
 

@@ -446,6 +446,20 @@ module AccountTests =
 
 
     [<Test>]
+    let ``Merger rows are not considered transactions`` () =
+        let testRows =
+            header
+            + """
+        02-06-2023,14:25,02-06-2023,BIG CORP COMMON,US4042511123,MERGER: Buy 7 BIG CORP COMMON@25.3651 USD (US4042511123),,USD,-177.56,USD,10.54,
+        02-06-2023,14:25,02-06-2023,SMALL CORP ACME,US494271234,MERGER: Sell 57 SMALL CORP ACME@3.3 USD (US494271234),,USD,188.10,USD,188.10,"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+        let txns = Seq.map buildTxn txnsGrouped
+        txns |> should be Empty
+
+
+    [<Test>]
     let ``Get earnings of a stock that had a split`` () =
         let testRows =
             header
@@ -522,6 +536,64 @@ module AccountTests =
 
         getSellsEarnings sellTxns txns isinChanges
         |> should equal [ expectedEarning ]
+
+    [<Test>]
+    let ``Get earnings of a stock that had a merger`` () =
+        let testRows =
+            header
+            + """
+        16-06-2023,18:25,16-06-2023,NEWCORP NAME,ISINNEW12345,FX Debit,1.0955,USD,-185.15,USD,6.86,7caa97fa-b0f0-4fde-89ef-408a6ff9849e
+        16-06-2023,18:25,16-06-2023,NEWCORP NAME,ISINNEW12345,FX Credit,,EUR,169.00,EUR,157.62,7caa97fa-b0f0-4fde-89ef-408a6ff9849e
+        16-06-2023,18:25,16-06-2023,NEWCORP NAME,ISINNEW12345,DEGIRO Transaction and/or third party fees,,EUR,-2.00,EUR,-11.38,7caa97fa-b0f0-4fde-89ef-408a6ff9849e
+        16-06-2023,18:25,16-06-2023,NEWCORP NAME,ISINNEW12345,Sell 7 NEWCORP NAME@26.45 USD (ISINNEW12345),,USD,185.15,USD,192.01,7caa97fa-b0f0-4fde-89ef-408a6ff9849e
+        06-06-2023,11:57,02-06-2023,NEWCORP NAME,ISINNEW12345,Corporate Action Cash Settlement Stock,,USD,513.00,USD,513.00,
+        02-06-2023,14:25,02-06-2023,NEWCORP NAME,ISINNEW12345,MERGER: Buy 7 NEWCORP NAME@25.3651 USD (ISINNEW12345),,USD,-177.56,USD,10.54,
+        02-06-2023,14:25,02-06-2023,OLDCORP NAME,ISINOLD123345,MERGER: Sell 57 OLDCORP NAME@3.3 USD (ISINOLD123345),,USD,188.10,USD,188.10,
+        11-05-2023,20:21,11-05-2023,OLDCORP NAME,ISINOLD123345,FX Debit,1.0941,USD,-75.18,USD,0.00,41b95965-ea3d-4668-83cb-7f31bcc91f27
+        11-05-2023,20:21,11-05-2023,OLDCORP NAME,ISINOLD123345,FX Credit,,EUR,68.71,EUR,3654.99,41b95965-ea3d-4668-83cb-7f31bcc91f27
+        11-05-2023,20:21,11-05-2023,OLDCORP NAME,ISINOLD123345,DEGIRO Transaction and/or third party fees,,EUR,-1.00,EUR,3586.28,41b95965-ea3d-4668-83cb-7f31bcc91f27
+        11-05-2023,20:21,11-05-2023,OLDCORP NAME,ISINOLD123345,Sell 6 OLDCORP NAME@12.53 USD (ISINOLD123345),,USD,75.18,USD,75.18,41b95965-ea3d-4668-83cb-7f31bcc91f27
+        11-04-2023,17:38,11-04-2023,OLDCORP NAME,ISINOLD123345,FX Credit,1.0884,USD,773.64,USD,0.01,bcb7c5f7-41f8-431e-ab0e-eaf52d72f21b
+        11-04-2023,17:38,11-04-2023,OLDCORP NAME,ISINOLD123345,FX Debit,,EUR,-710.82,EUR,3657.48,bcb7c5f7-41f8-431e-ab0e-eaf52d72f21b
+        11-04-2023,17:38,11-04-2023,OLDCORP NAME,ISINOLD123345,DEGIRO Transaction and/or third party fees,,EUR,-1.00,EUR,4368.30,bcb7c5f7-41f8-431e-ab0e-eaf52d72f21b
+        11-04-2023,17:38,11-04-2023,OLDCORP NAME,ISINOLD123345,Buy 63 OLDCORP NAME@12.28 USD (ISINOLD123345),,USD,-773.64,USD,-773.63,bcb7c5f7-41f8-431e-ab0e-eaf52d72f21b"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
+        txns |> should haveLength 3
+
+        let sellTxns = getSellTxnsInPeriod txns 2023 Period.All
+        let mergersChanges = getStockChanges rows
+        mergersChanges |> should haveCount 1
+
+        let partialBuyCost = (710.82m / 63m) * 6m
+
+        // XXX: in case of a merger (or ISIN change event) with "Corporate Action Cash Settlement" it's impossible to determine the
+        // precise earning of the transaction, since the "Cash Settlement" creates a disparity which
+        // is not possible to sort out as it cannot be related to the transaction in question (doesn't have a transaction GUID).
+
+        // let multiplier = 57 / 7
+        // let mergedBuyCost = (710.82m / 63m) * 7m * (decimal multiplier)
+        let mergedBuyCost = 710.82m
+        let expectedEarning = [
+            { Date = DateTime(2023, 6, 16, 18, 25, 0)
+              Product = "NEWCORP NAME"
+              ISIN = "ISINNEW12345"
+              ProdType = Shares
+              Value = (169.0m - mergedBuyCost)
+              Percent = Math.Round(((169.0m - mergedBuyCost) / mergedBuyCost) * 100.0m, 2) }
+            { Date = DateTime(2023, 05, 11, 20, 21, 0)
+              Product = "OLDCORP NAME"
+              ISIN = "ISINOLD123345"
+              ProdType = Shares
+              Value = 68.71m - partialBuyCost
+              Percent = Math.Round(((68.71m - partialBuyCost) / partialBuyCost) * 100.0m, 2) }
+        ]
+
+        getSellsEarnings sellTxns txns mergersChanges
+        |> should equal expectedEarning
 
 
     [<Test>]
