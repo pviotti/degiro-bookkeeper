@@ -396,21 +396,47 @@ module Account =
     /// a boolean stating if the input string was malformed.
     let cleanCsv (csvContent: string) =
         let rows = csvContent.Split '\n'
-
-        let isMalformed = Array.Exists(rows, (fun row -> (row[ 0..2 ].Equals ",,,")))
+        let isMalformed = Array.Exists(rows, (fun row -> (row.StartsWith ",,,")))
 
         if isMalformed then
             let sb = StringBuilder()
 
             rows
             |> Array.iter (fun row ->
-                let strToAppend =
-                    if row[ 0..2 ].Equals ",,," then
-                        (Array.last (row.Split(","))).TrimEnd()
-                    else
-                        Environment.NewLine + row.TrimEnd()
+                if row.StartsWith ",,," then
+                    let brokenRowFields = row.Split(",")
 
-                sb.Append(strToAppend) |> ignore)
+                    let allRowsSoFar = sb.ToString().Split(Environment.NewLine)
+                    let lastRowFields = Array.last(allRowsSoFar).Split(',')
+
+                    let newOrderId =
+                        Array.last (lastRowFields)
+                        + Array.last (brokenRowFields)
+
+                    let newDesc =
+                        if String.IsNullOrEmpty brokenRowFields[5] then
+                            lastRowFields[5]
+                        else
+                            lastRowFields[5] + " " + brokenRowFields[5]
+
+                    let newLastRow =
+                        String.concat
+                            ","
+                            (Array.concat [ lastRowFields[0..4]
+                                            Array.singleton newDesc
+                                            lastRowFields[6..10]
+                                            Array.singleton newOrderId ])
+
+                    let newRows =
+                        Array.concat [ allRowsSoFar[0 .. allRowsSoFar.Length - 2]
+                                       Array.singleton newLastRow ]
+
+                    let newRowsStr = String.concat Environment.NewLine newRows
+                    sb.Clear() |> ignore
+                    sb.Append(newRowsStr.Trim()) |> ignore
+                else
+                    sb.Append(Environment.NewLine + row.TrimEnd())
+                    |> ignore)
 
             sb.ToString().Trim(), isMalformed
         else
