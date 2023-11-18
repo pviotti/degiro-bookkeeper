@@ -9,11 +9,7 @@ open Degiro.Account
 open Degiro.CliOutput
 open Degiro.CsvOutput
 
-let VERSION =
-    Assembly
-        .GetExecutingAssembly()
-        .GetName()
-        .Version.ToString()
+let VERSION = Assembly.GetExecutingAssembly().GetName().Version.ToString()
 
 let PROGRAM_NAME = AppDomain.CurrentDomain.FriendlyName
 
@@ -27,7 +23,7 @@ type CliArguments =
     interface IArgParserTemplate with
         member s.Usage =
             match s with
-            | Version _ -> $"print {PROGRAM_NAME} version"
+            | Version -> $"print {PROGRAM_NAME} version"
             | CsvFilePath _ -> "path of Degiro Account Statement CSV file"
             | Year _ -> "year (in YYYY format)"
             | Period _ -> "Irish CGT tax period (1: Jan-Nov; 2: Dec; default: whole year)"
@@ -76,9 +72,7 @@ let main argv =
         let cleanCsv, isMalformed = cleanCsv originalCsvContent
 
         if isMalformed then
-            let newFilePath =
-                csvFilePath[.. csvFilePath.Length - 5]
-                + "-clean.csv"
+            let newFilePath = csvFilePath[.. csvFilePath.Length - 5] + "-clean.csv"
 
             File.WriteAllText(newFilePath, cleanCsv)
             printfn $"Cleaned CSV file has been written to {newFilePath}.\n"
@@ -107,12 +101,9 @@ let main argv =
             printfn $"No sells recorded in %d{year}, period: %A{period}."
         else
             let sellsSharesInPeriod =
-                sellsInPeriod
-                |> List.filter (fun x -> x.ProdType = Shares)
+                sellsInPeriod |> List.filter (fun x -> x.ProdType = Shares)
 
-            let sellsETFInPeriod =
-                sellsInPeriod
-                |> List.filter (fun x -> x.ProdType = ETF)
+            let sellsETFInPeriod = sellsInPeriod |> List.filter (fun x -> x.ProdType = ETF)
 
             let earningsSharesInPeriod = getSellsEarnings sellsSharesInPeriod txns stockChanges
 
@@ -176,8 +167,7 @@ let main argv =
 #if DEBUG
         printfn $"\nElapsed time: {timer.ElapsedMilliseconds} ms"
 #endif
-    with
-    | ex ->
+    with ex ->
         eprintfn $"Error: %s{ex.Message}\n%s{ex.StackTrace}"
         Environment.Exit 1
 
