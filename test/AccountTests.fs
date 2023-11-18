@@ -278,6 +278,21 @@ module AccountTests =
 
 
     [<Test>]
+    let ``Get total Spanish FTT for a year`` () =
+        let testRows =
+            header
+            + """
+        12-07-2023,15:14,12-07-2023,INT.AIRL.GRP,ES0177542018,Spanish Transaction Tax,,EUR,-18.00,EUR,92.46,asdfghjk-asdf-asdf-asdf-asdfghlkjhgf
+        12-07-2023,15:14,12-07-2023,INT.AIRL.GRP,ES0177542018,Spanish Transaction Tax,,EUR,-2.00,EUR,110.46,asdfghjk-asdf-asdf-asdf-asdfghlkjhgf
+        12-07-2023,15:14,12-07-2023,INT.AIRL.GRP,ES0177542018,DEGIRO Transaction and/or third party fees,,EUR,-4.90,EUR,112.46,asdfghjk-asdf-asdf-asdf-asdfghlkjhgf
+        12-07-2023,15:14,12-07-2023,INT.AIRL.GRP,ES0177542018,"Buy 4,928 INT.AIRL.GRP@1.826 EUR (ES0177542018)",,EUR,-8998.53,EUR,117.36,asdfghjk-asdf-asdf-asdf-asdfghlkjhgf
+        12-07-2023,15:14,12-07-2023,INT.AIRL.GRP,ES0177542018,Buy 548 INT.AIRL.GRP@1.826 EUR (ES0177542018),,EUR,-1000.65,EUR,9115.89,asdfghjk-asdf-asdf-asdf-asdfghlkjhgf"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        getTotalYearSpanishFTT rows 2023 |> should equal -20.0
+
+
+    [<Test>]
     let ``Get earnings in period`` () =
         let txnBuyA1 =
             { Product = "Acme Inc A"
