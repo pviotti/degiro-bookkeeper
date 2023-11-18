@@ -319,6 +319,14 @@ module Account =
         |> Seq.sumBy _.Price.Value
 
 
+    /// Compute total Spanish Finantial Transaction Tax for a given year
+    /// Ref: https://www.degiro.co.no/helpdesk/tax/what-spanish-financial-transaction-tax-spanish-ftt
+    let getTotalYearSpanishFTT (rows: seq<Row>) (year: int) =
+        rows
+        |> Seq.filter (fun x -> x.Date.Year = year && x.Description.Equals "Spanish Transaction Tax")
+        |> Seq.sumBy _.Price.Value
+
+
     /// Compute Stamp Duty fees for a given year
     let getTotalYearStampDuty (rows: seq<Row>) (year: int) =
         rows
