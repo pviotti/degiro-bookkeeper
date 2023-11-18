@@ -35,9 +35,7 @@ module OutputTests =
              + "2021-01-02,ACME Inc A,ABC1,Shares,123.0,20.0\r\n"
              + "2021-01-02,ACME Inc B,ABC2,ETF,500.0,10.0\r\n")
 
-        earningsToCsvString [ earningOne
-                              earningTwo ]
-        |> should equal expectedStr
+        earningsToCsvString [ earningOne; earningTwo ] |> should equal expectedStr
 
     [<TestCase>]
     let ``Empty earnings list to CSV string`` () =
@@ -68,9 +66,7 @@ module OutputTests =
              + "ACME Inc A,ABC1,42.0,0.50,USD\r\n"
              + "ACME Inc B,ABC2,142.0,0.52,EUR\r\n")
 
-        dividendsToCsvString [ dividendOne
-                               dividendTwo ]
-        |> should equal expectedStr
+        dividendsToCsvString [ dividendOne; dividendTwo ] |> should equal expectedStr
 
 
     [<TestCase>]
@@ -99,9 +95,7 @@ module OutputTests =
         let expectedStr1 = "Tot. P/L (€): 150.00"
         let expectedStr2 = "Avg % P/L: 15.00%"
 
-        let outStr =
-            getEarningsCliString [ earningOne
-                                   earningTwo ]
+        let outStr = getEarningsCliString [ earningOne; earningTwo ]
 
         outStr |> should contain expectedStr1
         outStr |> should contain expectedStr2
@@ -129,9 +123,7 @@ module OutputTests =
         let expectedStr3 = "Tot. net dividends in Can$: 0"
         let expectedStr4 = "Tot. net dividends in £: 0"
 
-        let outStr =
-            getDividendsCliString [ dividendOne
-                                    dividendTwo ]
+        let outStr = getDividendsCliString [ dividendOne; dividendTwo ]
 
         outStr |> should contain expectedStr1
         outStr |> should contain expectedStr2

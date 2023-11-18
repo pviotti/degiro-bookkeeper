@@ -10,9 +10,7 @@ module Utils =
 
     // Create discriminated unions from string - http://fssnip.net/9l
     let fromString<'a> (s: string) =
-        match FSharpType.GetUnionCases typeof<'a>
-              |> Array.filter (fun case -> case.Name = s)
-            with
+        match FSharpType.GetUnionCases typeof<'a> |> Array.filter (fun case -> case.Name = s) with
         | [| case |] -> FSharpValue.MakeUnion(case, [||]) :?> 'a
         | _ -> failwith (s + " not recognized as a valid parameter.")
 

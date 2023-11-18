@@ -215,14 +215,11 @@ module AccountTests =
         let rows = AccountCsv.Parse(testRows).Rows
         getTotalDeposits rows |> should equal 2200.0
 
-        getTotalYearDeposits rows 2019
-        |> should equal 1000.0
+        getTotalYearDeposits rows 2019 |> should equal 1000.0
 
-        getTotalYearDeposits rows 2020
-        |> should equal 500.0
+        getTotalYearDeposits rows 2020 |> should equal 500.0
 
-        getTotalYearDeposits rows 2021
-        |> should equal 700.0
+        getTotalYearDeposits rows 2021 |> should equal 700.0
 
 
     [<Test>]
@@ -246,17 +243,13 @@ module AccountTests =
 
         let rows = AccountCsv.Parse(testRows).Rows
 
-        getTotalWithdrawals rows
-        |> should equal (500.0 + 1540.0 + 1000.0)
+        getTotalWithdrawals rows |> should equal (500.0 + 1540.0 + 1000.0)
 
-        getTotalYearWithdrawals rows 2015
-        |> should equal 500.0
+        getTotalYearWithdrawals rows 2015 |> should equal 500.0
 
-        getTotalYearWithdrawals rows 2016
-        |> should equal 1540.0
+        getTotalYearWithdrawals rows 2016 |> should equal 1540.0
 
-        getTotalYearWithdrawals rows 2019
-        |> should equal 1000.0
+        getTotalYearWithdrawals rows 2019 |> should equal 1000.0
 
 
     [<Test>]
@@ -325,20 +318,13 @@ module AccountTests =
                 Quantity = 4
                 Date = DateTime(2020, 12, 1) }
 
-        let allTxns =
-            [ txnBuyA1
-              txnBuyA2
-              txnBuyB1
-              txnSellA1 ]
+        let allTxns = [ txnBuyA1; txnBuyA2; txnBuyB1; txnSellA1 ]
 
-        getSellTxnsInPeriod allTxns 2019 Period.Initial
-        |> should be Empty
+        getSellTxnsInPeriod allTxns 2019 Period.Initial |> should be Empty
 
-        getSellTxnsInPeriod allTxns 2020 Period.Initial
-        |> should be Empty
+        getSellTxnsInPeriod allTxns 2020 Period.Initial |> should be Empty
 
-        getSellTxnsInPeriod allTxns 2020 Period.Later
-        |> should equal [ txnSellA1 ]
+        getSellTxnsInPeriod allTxns 2020 Period.Later |> should equal [ txnSellA1 ]
 
         let expectedEarning =
             { Date = txnSellA1.Date
@@ -386,8 +372,7 @@ module AccountTests =
 
         let sellTxns = getSellTxnsInPeriod allTnxs 2020 Period.All
 
-        getSellsEarnings sellTxns allTnxs Map.empty
-        |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns allTnxs Map.empty |> should equal [ expectedEarning ]
 
 
     [<Test>]
@@ -496,8 +481,7 @@ module AccountTests =
               Value = (86.43m - 184.58m)
               Percent = Math.Round(((86.43m - 184.58m) / 184.58m) * 100.0m, 2) }
 
-        getSellsEarnings sellTxns txns splits
-        |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns txns splits |> should equal [ expectedEarning ]
 
 
     [<Test>]
@@ -534,8 +518,7 @@ module AccountTests =
               Value = (229.17m - 223.06m)
               Percent = Math.Round(((229.17m - 223.06m) / 223.06m) * 100.0m, 2) }
 
-        getSellsEarnings sellTxns txns isinChanges
-        |> should equal [ expectedEarning ]
+        getSellsEarnings sellTxns txns isinChanges |> should equal [ expectedEarning ]
 
     [<Test>]
     let ``Get earnings of a stock that had a merger`` () =
@@ -577,23 +560,22 @@ module AccountTests =
         // let multiplier = 57 / 7
         // let mergedBuyCost = (710.82m / 63m) * 7m * (decimal multiplier)
         let mergedBuyCost = 710.82m
-        let expectedEarning = [
-            { Date = DateTime(2023, 6, 16, 18, 25, 0)
-              Product = "NEWCORP NAME"
-              ISIN = "ISINNEW12345"
-              ProdType = Shares
-              Value = (169.0m - mergedBuyCost)
-              Percent = Math.Round(((169.0m - mergedBuyCost) / mergedBuyCost) * 100.0m, 2) }
-            { Date = DateTime(2023, 05, 11, 20, 21, 0)
-              Product = "OLDCORP NAME"
-              ISIN = "ISINOLD123345"
-              ProdType = Shares
-              Value = 68.71m - partialBuyCost
-              Percent = Math.Round(((68.71m - partialBuyCost) / partialBuyCost) * 100.0m, 2) }
-        ]
 
-        getSellsEarnings sellTxns txns mergersChanges
-        |> should equal expectedEarning
+        let expectedEarning =
+            [ { Date = DateTime(2023, 6, 16, 18, 25, 0)
+                Product = "NEWCORP NAME"
+                ISIN = "ISINNEW12345"
+                ProdType = Shares
+                Value = (169.0m - mergedBuyCost)
+                Percent = Math.Round(((169.0m - mergedBuyCost) / mergedBuyCost) * 100.0m, 2) }
+              { Date = DateTime(2023, 5, 11, 20, 21, 0)
+                Product = "OLDCORP NAME"
+                ISIN = "ISINOLD123345"
+                ProdType = Shares
+                Value = 68.71m - partialBuyCost
+                Percent = Math.Round(((68.71m - partialBuyCost) / partialBuyCost) * 100.0m, 2) } ]
+
+        getSellsEarnings sellTxns txns mergersChanges |> should equal expectedEarning
 
 
     [<Test>]
@@ -616,8 +598,7 @@ module AccountTests =
                    ProductAfter = "ACME Inc NEW"
                    Multiplier = 10 })]
 
-        stockChanges
-        |> should equal expectedStockChangeMap
+        stockChanges |> should equal expectedStockChangeMap
 
 
     [<Test>]
@@ -660,8 +641,6 @@ module AccountTests =
 
         let rows = AccountCsv.Parse(testRows).Rows
 
-        getTotalYearStampDuty rows 2022
-        |> should equal (-0.44 - 8.01)
+        getTotalYearStampDuty rows 2022 |> should equal (-0.44 - 8.01)
 
-        getTotalYearStampDuty rows 2023
-        |> should equal (-11.94 - 1.33)
+        getTotalYearStampDuty rows 2023 |> should equal (-11.94 - 1.33)
