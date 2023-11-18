@@ -27,7 +27,7 @@ type CliArguments =
     interface IArgParserTemplate with
         member s.Usage =
             match s with
-            | Version _ -> $"print {PROGRAM_NAME} version"
+            | Version -> $"print {PROGRAM_NAME} version"
             | CsvFilePath _ -> "path of Degiro Account Statement CSV file"
             | Year _ -> "year (in YYYY format)"
             | Period _ -> "Irish CGT tax period (1: Jan-Nov; 2: Dec; default: whole year)"
