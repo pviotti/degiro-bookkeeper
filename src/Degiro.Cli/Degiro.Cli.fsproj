@@ -16,6 +16,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Argu" Version="6.2.1" />
+      <PackageReference Include="Argu" Version="6.2.3" />
     </ItemGroup>
 </Project>
