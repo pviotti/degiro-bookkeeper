@@ -388,7 +388,7 @@ module Account =
                     let newOrderId = Array.last (lastRowFields) + Array.last (brokenRowFields)
 
                     let newDesc =
-                        if String.IsNullOrEmpty brokenRowFields[5] then
+                        if String.IsNullOrEmpty brokenRowFields[5] || brokenRowFields[5].Contains('"') then
                             lastRowFields[5]
                         else
                             lastRowFields[5] + " " + brokenRowFields[5]
