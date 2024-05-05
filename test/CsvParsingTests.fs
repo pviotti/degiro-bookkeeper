@@ -41,6 +41,18 @@ module CsvParsingTests =
         isMalformed |> should be True
         cleanRows |> should equal expectedCleanRows
 
+    [<Test>]
+    let ``Clean malformed transfer row`` () =
+        let malformedRows =
+            """15-06-2023,17:05,15-06-2023,,,Transfer from your Cash Account at flatexDEGIRO Bank AG:,,,,EUR,12345.67,
+,,,,,"6,543.21 EUR",,,,,,"""
+
+        let expectedCleanRows =
+            """15-06-2023,17:05,15-06-2023,,,Transfer from your Cash Account at flatexDEGIRO Bank AG:,,,,EUR,12345.67,"""
+
+        let cleanRows, isMalformed = cleanCsv malformedRows
+        isMalformed |> should be True
+        cleanRows |> should equal expectedCleanRows
 
     [<Test>]
     let ``Parse row without price value`` () =

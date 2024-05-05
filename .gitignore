@@ -42,3 +42,4 @@ BenchmarkDotNet.Artifacts
 
 
 .fake
+*.trx
