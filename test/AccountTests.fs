@@ -659,3 +659,57 @@ module AccountTests =
         getTotalYearStampDuty rows 2022 |> should equal (-0.44 - 8.01)
 
         getTotalYearStampDuty rows 2023 |> should equal (-11.94 - 1.33)
+
+
+    [<Test>]
+    let ``Get ETF buy transactions in a given year`` () =
+        let testRows =
+            header
+            + """
+03-05-2024,21:59,03-05-2024,ACME LTD VERY GOOD,US1233456,FX Debit,1.0791,USD,-2335.50,USD,0.00,305a5867-3282-4ac5-9e09-be49ac2f1f02
+03-05-2024,21:59,03-05-2024,ACME LTD VERY GOOD,US1233456,FX Credit,,EUR,2164.32,EUR,2309.28,305a5867-3282-4ac5-9e09-be49ac2f1f02
+03-05-2024,21:59,03-05-2024,ACME LTD VERY GOOD,US1233456,DEGIRO Transaction and/or third party fees,,EUR,-2.00,EUR,144.96,305a5867-3282-4ac5-9e09-be49ac2f1f02
+03-05-2024,21:59,03-05-2024,ACME LTD VERY GOOD,US1233456,Sell 173 ACME LTD VERY GOOD@13.5 USD (US1233456),,USD,2335.50,USD,2335.50,305a5867-3282-4ac5-9e09-be49ac2f1f02
+18-04-2024,10:06,18-04-2024,AMUNDI STOXX EUROPE 600 - UCITS ETF,LU0123456,DEGIRO Transaction and/or third party fees,,EUR,-1.00,EUR,82.90,39ff7a39-4a82-4e50-b49b-3c731be6202a
+18-04-2024,10:06,18-04-2024,AMUNDI STOXX EUROPE 600 - UCITS ETF,LU0123456,Buy 13 AMUNDI STOXX EUROPE 600 - UCITS ETF ACC@228.95 EUR (LU0123456),,EUR,-2976.35,EUR,83.90,39ff7a39-4a82-4e50-b49b-3c731be6202a
+04-04-2024,21:40,04-04-2024,BERKSHIRE HATHAWAY INC,US0846707026,FX Credit,1.0809,USD,1660.00,USD,0.00,f64bdbd7-6864-44d1-8897-c99c9f8af142
+04-04-2024,21:40,04-04-2024,BERKSHIRE HATHAWAY INC,US0846707026,FX Debit,,EUR,-1535.77,EUR,169.81,f64bdbd7-6864-44d1-8897-c99c9f8af142
+04-04-2024,21:40,04-04-2024,BERKSHIRE HATHAWAY INC,US0846707026,DEGIRO Transaction and/or third party fees,,EUR,-2.00,EUR,1705.58,f64bdbd7-6864-44d1-8897-c99c9f8af142
+04-04-2024,21:40,04-04-2024,BERKSHIRE HATHAWAY INC,US0846707026,Buy 4 BERKSHIRE HATHAWAY INC@415 USD (US0846707026),,USD,-1660.00,USD,-1660.00,f64bdbd7-6864-44d1-8897-c99c9f8af142
+01-03-2024,12:08,01-03-2024,ISHARES CORE S&P 500 UCITS ETF USD,IE00123456,DEGIRO Transaction and/or third party fees,,EUR,-1.00,EUR,2122.85,449f7dce-814d-4174-aaec-caf3dc6c1862
+01-03-2024,12:08,01-03-2024,ISHARES CORE S&P 500 UCITS ETF USD,IE00123456,Buy 6 iShares Core S&P 500 UCITS ETF USD (Acc)@494.31 EUR (IE00123456),,EUR,-2965.86,EUR,2123.85,449f7dce-814d-4174-aaec-caf3dc6c1862
+08-12-2023,17:07,08-12-2023,ISHARES EMIM,IE98765,DEGIRO Transaction and/or third party fees,,EUR,-1.00,EUR,207.54,2ad5b7e3-414d-497b-9e74-807a95892125
+08-12-2023,17:07,08-12-2023,ISHARES EMIM,IE98765,Buy 14 ISHARES EMIM@28.151 EUR (IE98765),,EUR,-394.11,EUR,208.54,2ad5b7e3-414d-497b-9e74-807a95892125
+08-12-2023,17:06,08-12-2023,ISHARES CORE S&P 500 UCITS ETF USD,IE00123456,DEGIRO Transaction and/or third party fees,,EUR,-1.00,EUR,602.65,28d568a3-b27d-497d-8974-12651af7b10d
+08-12-2023,17:06,08-12-2023,ISHARES CORE S&P 500 UCITS ETF USD,IE00123456,Buy 3 iShares Core S&P 500 UCITS ETF USD (Acc)@447.32 EUR (IE00123456),,EUR,-1341.96,EUR,603.65,28d568a3-b27d-497d-8974-12651af7b10d"""
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
+        let etfBuys = getEtfBuyTxnsInYear txns 2024
+
+        let expectedTxns =
+            [ { Date = DateTime(2024, 4, 18, 10, 6, 0)
+                Type = Buy
+                Product = "AMUNDI STOXX EUROPE 600 - UCITS ETF"
+                ISIN = "LU0123456"
+                ProdType = ProductType.ETF
+                Quantity = 13
+                Price = -228.95m * 13m
+                Value = 228.95m
+                ValueCurrency = Currency.EUR
+                Fees = -1.0m
+                OrderId = Guid.Parse("39ff7a39-4a82-4e50-b49b-3c731be6202a") }
+              { Date = DateTime(2024, 3, 1, 12, 8, 0)
+                Type = Buy
+                Product = "ISHARES CORE S&P 500 UCITS ETF USD"
+                ISIN = "IE00123456"
+                ProdType = ProductType.ETF
+                Quantity = 6
+                Price = -494.31m * 6m
+                Value = 494.31m
+                ValueCurrency = Currency.EUR
+                Fees = -1.0m
+                OrderId = Guid.Parse("449f7dce-814d-4174-aaec-caf3dc6c1862") } ]
+
+        etfBuys |> should equal expectedTxns

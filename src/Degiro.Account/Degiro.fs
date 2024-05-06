@@ -178,6 +178,13 @@ module Account =
         |> List.sortByDescending _.Date
 
 
+    /// Get all buy transactions for ETF products in the given year
+    let getEtfBuyTxnsInYear (txns: list<Txn>) (year: int) : list<Txn> =
+        txns
+        |> List.filter (fun x -> x.Type = Buy && x.ProdType = ETF && x.Date.Year = year)
+        |> List.sortByDescending _.Date
+
+
     /// Return a map containing all StockChange indexed by their ISIN after the split, ISIN change or merger
     let getStockChanges (rows: seq<Row>) : Map<string, StockChange> =
         let changeRowGroups =
