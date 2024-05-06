@@ -58,6 +58,7 @@ OPTIONS:
 
  - only supports Degiro account statements in English language
  - only outputs earnings in €
+ - only supports "Auto FX" (see [#136](https://github.com/pviotti/degiro-bookkeeper/issues/136))
  - only supports transactions in € or USD
 
 ## FAQ
