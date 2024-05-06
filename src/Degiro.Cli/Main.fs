@@ -19,6 +19,7 @@ type CliArguments =
     | [<AltCommandLine("-y")>] Year of year: int
     | [<AltCommandLine("-p")>] Period of period: int
     | [<AltCommandLine("-o")>] OutputPath of output_path: string
+    | EtfBuys
 
     interface IArgParserTemplate with
         member s.Usage =
@@ -28,6 +29,7 @@ type CliArguments =
             | Year _ -> "year (in YYYY format)"
             | Period _ -> "Irish CGT tax period (1: Jan-Nov; 2: Dec; default: whole year)"
             | OutputPath _ -> "path for earnings and dividends CSVs output"
+            | EtfBuys -> "prints and outputs buy transactions of ETFs"
 
 
 let printVersion () = printfn $"{PROGRAM_NAME} v{VERSION}"
@@ -129,6 +131,21 @@ let main argv =
                 File.WriteAllText(csvEarningsETFPath, csvEarningsETF)
                 printfn $"\nShares earnings CSV file written to: {csvEarningsSharesPath}"
                 printfn $"ETF earnings CSV file written to: {csvEarningsETFPath}\n"
+
+        // ETF buys
+        if args.Contains EtfBuys then
+            let etfBuys = getEtfBuyTxnsInYear txns year
+
+            printfn $"\n📂 ETF buys in {year}:\n"
+            printfn $"%s{getEtfBuysCliString etfBuys}"
+
+            if outputPath.IsSome then
+                let csvEtfBuys = etfBuysToCsvString etfBuys
+
+                let outputFilePath = Path.Combine(outputPath.Value, $"{year}-degiro-etf-buys.csv")
+
+                File.WriteAllText(outputFilePath, csvEtfBuys)
+                printfn $"ETF buys CSV file written to {outputFilePath}\n"
 
         // Dividends
         let dividends = getAllDividends rows year
