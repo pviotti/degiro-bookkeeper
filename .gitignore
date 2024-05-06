@@ -1,5 +1,6 @@
 # CSV input files
 *.csv
+.~lock.*
 
 *.swp
 *.*~
@@ -43,3 +44,6 @@ BenchmarkDotNet.Artifacts
 
 .fake
 *.trx
+
+_archive
+.dev
