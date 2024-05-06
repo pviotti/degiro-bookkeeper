@@ -178,7 +178,7 @@ module Account =
         |> List.sortByDescending _.Date
 
 
-    /// Get all buy transactions for ETF products in the given year and Irish tax period
+    /// Get all buy transactions for ETF products in the given year
     let getEtfBuyTxnsInYear (txns: list<Txn>) (year: int) : list<Txn> =
         txns
         |> List.filter (fun x -> x.Type = Buy && x.ProdType = ETF && x.Date.Year = year)
