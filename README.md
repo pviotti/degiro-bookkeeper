@@ -22,7 +22,7 @@ in a given period.
 
 ```bash
 $ ./dgbk --help
-USAGE: dgbk [--help] [--version] --year <year> [--period <period>] [--outputpath <output path>] <input>
+USAGE: dgbk [--help] [--version] [--year <year>] [--period <period>] [--outputpath <output path>] [--etfbuys] [<input>]
 
 CSVFILEPATH:
 
@@ -35,7 +35,8 @@ OPTIONS:
     --period, -p <period> Irish CGT tax period (1: Jan-Nov; 2: Dec; default: whole year)
     --outputpath, -o <output path>
                           path for earnings and dividends CSVs output
-    --help                display this list of options
+    --etfbuys             prints and outputs buy transactions of ETFs
+    --help                display this list of options.
 ```
 
 ## Features
@@ -52,7 +53,9 @@ OPTIONS:
  - output and take into account stock splits
  - output and take into account changes in stock name or ISIN
  - country-specific features:
-   - Ireland: support for CGT tax periods (i.e. Initial and Later - see revenue.ie)
+   - Ireland:
+     - support for CGT tax periods (i.e. Initial and Later - see revenue.ie)
+     - support for tracking ETF buy transactions (to comply with Deemed Disposal tax)
 
 ## Limitations
 
