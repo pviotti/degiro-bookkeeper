@@ -500,6 +500,70 @@ module AccountTests =
 
 
     [<Test>]
+    let ``Get earnings of a stock that had a split with ISIN change and multiplier rounding error`` () =
+        let testRows =
+            header
+            + """
+        29-07-2024,15:30,29-07-2024,ACME INC,NEWISIN12345,FX Debit,1.0842,USD,-9.02,USD,-0.01,96908937-369f-46fe-be23-d9807ad1550d
+        29-07-2024,15:30,29-07-2024,ACME INC,NEWISIN12345,FX Credit,,EUR,8.31,EUR,4364.27,96908937-369f-46fe-be23-d9807ad1550d
+        29-07-2024,15:30,29-07-2024,ACME INC,NEWISIN12345,DEGIRO Transaction and/or third party fees,,EUR,-2.00,EUR,4355.96,96908937-369f-46fe-be23-d9807ad1550d
+        29-07-2024,15:30,29-07-2024,ACME INC,NEWISIN12345,Sell 25 ACME Inc@0.3606 USD (NEWISIN12345),,USD,9.02,USD,9.01,96908937-369f-46fe-be23-d9807ad1550d
+        04-04-2023,14:34,04-04-2023,ACME INC,NEWISIN12345,STOCK SPLIT: Buy 25 ACME Inc@4.8765 USD (NEWISIN12345),,USD,-121.91,USD,4.84,
+        04-04-2023,14:34,04-04-2023,ACME INC,OLDISIN12345,STOCK SPLIT: Sell 375 ACME Inc@0.3251 USD (OLDISIN12345),,USD,121.91,USD,126.75,
+        14-05-2021,15:54,14-05-2021,ACME INC,OLDISIN12345,FX Credit,1.2133,USD,460.70,USD,0.00,019fe8b6-772d-4fe4-89fd-1031045a3679
+        14-05-2021,15:54,14-05-2021,ACME INC,OLDISIN12345,FX Debit,,EUR,-379.71,EUR,1016.46,019fe8b6-772d-4fe4-89fd-1031045a3679
+        14-05-2021,15:54,14-05-2021,ACME INC,OLDISIN12345,DEGIRO Transaction and/or third party fees,,EUR,-0.56,EUR,1396.17,019fe8b6-772d-4fe4-89fd-1031045a3679
+        14-05-2021,15:54,14-05-2021,ACME INC,OLDISIN12345,DEGIRO Transaction and/or third party fees,,EUR,-0.50,EUR,1396.73,019fe8b6-772d-4fe4-89fd-1031045a3679
+        14-05-2021,15:54,14-05-2021,ACME INC,OLDISIN12345,Buy 170 ACME Inc@2.71 USD (OLDISIN12345),,USD,-460.70,USD,-460.70,019fe8b6-772d-4fe4-89fd-1031045a3679
+        25-03-2021,18:37,25-03-2021,ACME INC,OLDISIN12345,FX Credit,1.1757,USD,165.25,USD,0.60,e4ec296d-8bb9-47ee-80d8-c230139a7f34
+        25-03-2021,18:37,25-03-2021,ACME INC,OLDISIN12345,FX Debit,,EUR,-140.55,EUR,1258.17,e4ec296d-8bb9-47ee-80d8-c230139a7f34
+        25-03-2021,18:37,25-03-2021,ACME INC,OLDISIN12345,DEGIRO Transaction and/or third party fees,,EUR,-0.17,EUR,1398.72,e4ec296d-8bb9-47ee-80d8-c230139a7f34
+        25-03-2021,18:37,25-03-2021,ACME INC,OLDISIN12345,FX Credit,1.1757,USD,99.15,USD,-164.65,e4ec296d-8bb9-47ee-80d8-c230139a7f34
+        25-03-2021,18:37,25-03-2021,ACME INC,OLDISIN12345,FX Debit,,EUR,-84.33,EUR,1398.89,e4ec296d-8bb9-47ee-80d8-c230139a7f34
+        25-03-2021,18:37,25-03-2021,ACME INC,OLDISIN12345,DEGIRO Transaction and/or third party fees,,EUR,-0.10,EUR,1483.22,e4ec296d-8bb9-47ee-80d8-c230139a7f34
+        25-03-2021,18:37,25-03-2021,ACME INC,OLDISIN12345,DEGIRO Transaction and/or third party fees,,EUR,-0.50,EUR,1483.32,e4ec296d-8bb9-47ee-80d8-c230139a7f34
+        25-03-2021,18:37,25-03-2021,ACME INC,OLDISIN12345,Buy 50 ACME Inc@3.305 USD (OLDISIN12345),,USD,-165.25,USD,-263.80,e4ec296d-8bb9-47ee-80d8-c230139a7f34
+        25-03-2021,18:37,25-03-2021,ACME INC,OLDISIN12345,Buy 30 ACME Inc@3.305 USD (OLDISIN12345),,USD,-99.15,USD,-98.55,e4ec296d-8bb9-47ee-80d8-c230139a7f34
+        21-01-2021,15:35,21-01-2021,ACME INC,OLDISIN12345,FX Credit,1.2136,USD,612.50,USD,-0.51,d16a014f-cdb4-4a5d-b8ed-5dcdd0362c31
+        21-01-2021,15:35,21-01-2021,ACME INC,OLDISIN12345,FX Debit,,EUR,-504.70,EUR,217.95,d16a014f-cdb4-4a5d-b8ed-5dcdd0362c31
+        21-01-2021,15:35,21-01-2021,ACME INC,OLDISIN12345,DEGIRO Transaction and/or third party fees,,EUR,-0.41,EUR,722.65,d16a014f-cdb4-4a5d-b8ed-5dcdd0362c31
+        21-01-2021,15:35,21-01-2021,ACME INC,OLDISIN12345,DEGIRO Transaction and/or third party fees,,EUR,-0.50,EUR,723.06,d16a014f-cdb4-4a5d-b8ed-5dcdd0362c31
+        21-01-2021,15:35,21-01-2021,ACME INC,OLDISIN12345,Buy 125 ACME Inc@4.9 USD (OLDISIN12345),,USD,-612.50,USD,-613.01,d16a014f-cdb4-4a5d-b8ed-5dcdd0362c31"""
+
+        // Here we have:
+        // 125 + 30 + 50 + 170 = 375 shares bought
+        // then a stock split 15:1
+        // then 25 shares sold.
+
+        // If we use the multiplier of the stock split to compute the quantity of buys, we get:
+        // (125/15) + (30/15) + (50/15) + (170/15) = 8.33333 + 2 + 3.33333 + 11.33333 = 24.99999 shares bought
+        // which is different from the 25 shares sold.
+        // Hence we need to round up to the next unit the quantity of one of the buy transactions.
+
+        let rows = AccountCsv.Parse(testRows).Rows
+        let txnsGrouped = getRowsGroupedByOrderId rows
+
+        let txns = Seq.map buildTxn txnsGrouped |> Seq.toList
+        txns |> should haveLength 4
+
+        let sellTxns = getSellTxnsInPeriod txns 2024 Period.All
+        let splits = getStockChanges rows
+        splits |> should haveCount 1
+
+        let totCostBuys = 504.7m + 84.33m + 140.55m + 379.71m
+
+        let expectedEarning =
+            { Date = DateTime(2024, 7, 29, 15, 30, 0)
+              Product = "ACME INC"
+              ISIN = "NEWISIN12345"
+              ProdType = Shares
+              Value = 8.31m - totCostBuys
+              Percent = Math.Round(((8.31m - totCostBuys) / totCostBuys) * 100.0m, 2) }
+
+        getSellsEarnings sellTxns txns splits |> should equal [ expectedEarning ]
+
+
+    [<Test>]
     let ``Get earnings of a stock that had an ISIN change`` () =
         let testRows =
             header
