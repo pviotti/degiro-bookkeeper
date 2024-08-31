@@ -253,8 +253,26 @@ module Account =
                         ISIN = stockChange.IsinAfter
                         Value = x.Value * (decimal stockChange.Multiplier)
                         Quantity = x.Quantity / stockChange.Multiplier })
+                |> List.sortByDescending (fun x -> x.Date)
 
-            buysPrecedingSell @ buysPrecedingSellBeforeStockChange
+            // Note: If the total quantity of buys is one unit less than the quantity sold,
+            // then it's due to a rounding error in the stock change multiplier.
+            // So we arbitrarily add one unit to the last buy transaction before the stock change.
+            let totQuantityBuys =
+                buysPrecedingSell @ buysPrecedingSellBeforeStockChange |> List.sumBy _.Quantity
+
+            let buysPrecedingSellBeforeStockChangeRounded =
+                if totQuantityBuys - sellTxn.Quantity = -1 then
+                    buysPrecedingSellBeforeStockChange
+                    |> List.mapi (fun index buy ->
+                        if index = 0 then
+                            { buy with Quantity = buy.Quantity + 1 }
+                        else
+                            buy)
+                else
+                    buysPrecedingSellBeforeStockChange
+
+            buysPrecedingSell @ buysPrecedingSellBeforeStockChangeRounded
             |> List.sortByDescending (fun x -> x.Date)
         else
             buysPrecedingSell
@@ -271,7 +289,8 @@ module Account =
             if quantityToSell = 0 then
                 totBuyPrice
             elif List.isEmpty buys && quantityToSell <> 0 then // Should not happen
-                failwithf $"could not find buy transactions for remaining {quantityToSell} sells of %A{sellTxn}"
+                failwithf
+                    $"could not find buy transactions for remaining {quantityToSell} stock unit(s) sold as part of %A{sellTxn}"
             else
                 let currBuy = List.head buys
 
