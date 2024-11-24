@@ -1,3 +1,5 @@
+coverage*.xml
+
 # CSV input files
 *.csv
 .~lock.*

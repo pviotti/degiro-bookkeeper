@@ -96,7 +96,7 @@ module AccountTests =
               "iSHR ESTX50 B A"
               "LYXOR ETF CAC 40" ]
 
-        let rndEtfDesc = realEtfDescr[Random().Next(realEtfDescr.Length)]
+        let rndEtfDesc = realEtfDescr |> List.randomChoice
 
         let testRows =
             header
