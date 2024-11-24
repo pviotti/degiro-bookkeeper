@@ -19,11 +19,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.x'
+        dotnet-version: '9.x'
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
@@ -40,12 +40,12 @@ jobs:
         tag: '${{ github.run_number }}_${{ github.run_id }}'
         toolpath: 'reportgeneratortool'
     - name: Upload coverage report artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: CoverageReport
         path: coveragereport
     - name: Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         files: ./coveragereport/Cobertura.xml
         directory: ./coveragereport/
@@ -66,11 +66,11 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.x'
+        dotnet-version: '9.x'
     - name: Set version variable (Linux and MacOS)
       if: matrix.config.id != 'win'
       run: echo "VER=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
@@ -96,7 +96,7 @@ jobs:
         Compress-Archive -Path dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc -DestinationPath dgbk-${{ env.VER }}-${{ matrix.config.id }}-sc.zip
 
     - name: Create draft release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         draft: true
         files: ./*.zip
