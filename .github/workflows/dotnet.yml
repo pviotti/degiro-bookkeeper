@@ -44,9 +44,11 @@ jobs:
       with:
         name: CoverageReport
         path: coveragereport
+        overwrite: true
     - name: Codecov
       uses: codecov/codecov-action@v5
       with:
+        files: Cobertura.xml
         directory: ./coveragereport/
         flags: unittests
         name: 'Degiro Bookkeeper coverage'
