@@ -4,7 +4,7 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net9.0</TargetFramework>
         <AssemblyName>dgbk</AssemblyName>
-        <Version>0.8.0</Version>
+        <Version>0.9.0</Version>
     </PropertyGroup>
 
     <ItemGroup>
