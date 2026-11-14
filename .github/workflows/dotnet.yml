@@ -19,11 +19,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: '10.x'
+        dotnet-version: '11.x'
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
@@ -67,11 +67,11 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: '9.x'
+        dotnet-version: '11.x'
     - name: Set version variable (Linux and MacOS)
       if: matrix.config.id != 'win'
       run: echo "VER=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
@@ -103,5 +103,4 @@ jobs:
         files: ./*.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 
