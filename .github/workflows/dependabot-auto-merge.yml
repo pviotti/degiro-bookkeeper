@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
-        uses: dependabot/fetch-metadata@6a36b8f119f8ab27e194f1323ad1551481080d59
+        uses: dependabot/fetch-metadata@f6f48e4820a35cbcbfe69f9c8633bef8ab1c31b7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Enable auto-merge for minor and patch updates
